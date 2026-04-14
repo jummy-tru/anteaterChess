@@ -9,7 +9,7 @@ void showMenu() {
   printf("Select Mode:\n");
   printf("1. Human vs Human\n");
   printf("2. Human vs Robot\n");
-  printf("3. Quit\n);
+  printf("3. Quit\n");
   printf("Enter choice: ");
 }
 

@@ -18,32 +18,80 @@ void possibleMoves(Piece* piece, Board* board, int row, int col, MoveList *avail
 	{
 	case (ROOK):
 		possibleSlidingMoves(piece, board, row, col, true, false, availableMoves);
-	}
+    break;
+  case (QUEEN):
+    possibleSlidingMoves(piece, board, row, col, true, true, availableMoves);
+    break;
+  case (BISHOP):
+    possibleSlidingMoves(piece, board, row, col, false, true, availableMoves);
+  }
 }
 
-// "simple" diagonal or linear movement
-// rooks, bishops, king, and queen can use this one  
-// can refactor into linear and diagonals separately if you want
+void addNeighbors(Piece* piece, Board* board, int row, int col, int rowOffset, int colOffset, MoveList *availableMoves)
+{
+  // Take direction from user and increment in that direction
+  int currentRow = row + rowOffset;
+  int currentCol = col + colOffset;
+  while (currentRow >= 0 && currentRow <= 7 && currentCol >= 0 && currentCol <= 9)
+  {
+    // If the squarein direction is occupied by opposite color
+    if (getPiece(board, currentRow, currentCol).pieceType != EMPTY && 
+      getPiece(board, currentRow, currentCol).color != piece->color)
+    {
+      availableMoves->list[availableMoves->index] = 
+        createMove(row, col, currentRow, currentCol);
+      availableMoves->index++;
+      break;
+    }
+    // If the square in direction is occupied by same color
+    else if (getPiece(board, currentRow, currentCol).pieceType != EMPTY && 
+      getPiece(board, currentRow, currentCol).color == piece->color)
+    {
+      break;
+    }
+    // Square to the left is not occupied
+    else {
+      availableMoves->list[availableMoves->index] = 
+        createMove(row, col, currentRow, currentCol);
+      availableMoves->index++;
+      currentRow += rowOffset;
+      currentCol += colOffset;
+    }
+  }
+}
+
+// diagonal or linear movement
+// rooks, bishops, and queen can use this one  
 void possibleSlidingMoves(Piece* piece, Board* board, int row, int col, bool isLinear, bool isDiagonal, MoveList *availableMoves)
 {
 	if (isLinear)
 	{
 		// Check left side
-		int currentCol = row - 1;
-		while (currentCol >= 0 && currentCol <= 9)
-		{
-			availableMoves->list[availableMoves->index] = createMove(row, col, row, currentCol);
-			availableMoves->index++;
-			if (getPiece(board, row, currentCol).pieceType != EMPTY)
-			{
-				break;
-			}
-			else
-			{
-				currentCol--;
-			}
-		}
+		addNeighbors(piece, board, row, col, 0, -1, availableMoves);
+
+    // Check right side
+		addNeighbors(piece, board, row, col, 0, 1, availableMoves);
+
+    // Check above
+    addNeighbors(piece, board, row, col, -1, 0, availableMoves);
+
+    // Check below
+    addNeighbors(piece, board, row, col, 1, 0, availableMoves);
 	}
+
+  if (isDiagonal)
+  {  // Check top left
+    addNeighbors(piece, board, row, col, -1, -1, availableMoves);
+
+    // Check top right
+    addNeighbors(piece, board, row, col, -1, 1, availableMoves);
+
+    // Check bottom left
+    addNeighbors(piece, board, row, col, 1, -1, availableMoves);
+
+    // Check bottom right
+    addNeighbors(piece, board, row, col, 1, 1, availableMoves);
+  }
 }
 
 // Knight movement

@@ -5,6 +5,30 @@
 #include <ctype.h>
 #include "board.h"
 
+// Changes chess rank like 3rd rank to corresponding array index 
+int rankToRow(int rank)
+{
+  return (8 - rank);
+}
+
+// Reverse of the above
+int rowToRank(int row)
+{
+  return (8 - row);
+}
+
+// Changes chess file like C to corresponding array index USE CAPITAL
+int fileToCol(char file)
+{
+  return (file - 65);
+}
+
+// Reverse of the above
+char colToFile(int col)
+{
+  return ((char)(col+65));
+}
+
 void emptyBoard(Board *board)
 {
   for (int i = 0; i < 8; i++)

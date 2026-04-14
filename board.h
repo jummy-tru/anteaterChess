@@ -10,6 +10,11 @@ typedef struct {
   Piece squares[8][10];
 } Board;
 
+int rankToRow(int rank);
+int rowToRank(int row);
+int fileToCol(char file);
+char colToFile(int col);
+
 void emptyBoard(Board* board);
 void setupBoard(Board* board);
 int loadBoardFromFEN(Board *board, const char *fen);
