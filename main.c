@@ -29,7 +29,7 @@ IF ANY VALIDATION FAIL LOOP BACK TO 1 AND ASK USER AGAIN
 12. Check if checkmate/stalemate
     12.2 If true kill the loop and end the game (END LOOP)
 13. Swith Color
-LOOP BACK 
+LOOP BACK TO 1
 */
 
   return 0;
