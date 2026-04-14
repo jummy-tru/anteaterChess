@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "board.h"
-#include "moves.h"
 
 // Changes chess rank like 3rd rank to corresponding array index 
 int rankToRow(int rank)

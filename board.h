@@ -2,7 +2,6 @@
 #define BOARD_H
 
 #include "pieces.h"
-#include "moves.h"
 
 #define ROWS 8
 #define COLS 10
@@ -10,7 +9,6 @@
 typedef struct {
   Piece squares[8][10];
   Color currentTurn;
-  Move history[512];
   int moveCount;
 } Board;
 
