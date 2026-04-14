@@ -214,10 +214,10 @@ void showBoard(Board *board)
 {
   int r, c;
 
-  printf("\n    A   B   C   D   E   F   G   H   I   J\n");
+  printf("\n    A    B    C    D    E    F    G    H    I    J\n");
   for (r = 0; r < ROWS; r++)
   {
-    printf("  +---+---+---+---+---+---+---+---+---+---+\n");
+    printf("  +----+----+----+----+----+----+----+----+----+----+\n");
     printf("%d |", 8 - r);
 
     for (c = 0; c < COLS; c++)
@@ -225,16 +225,16 @@ void showBoard(Board *board)
       Piece p = board->squares[r][c];
       if (p.pieceType == EMPTY)
       {
-        printf("   |");
+        printf("    |");
       }
       else
       {
-        printf(" %c%c|", pieceColorChar(p.color), pieceTypeChar(p.pieceType));
+        printf(" %c%c |", pieceColorChar(p.color), pieceTypeChar(p.pieceType));
       }
     }
 
     printf(" %d\n", 8 - r);
   }
-  printf("  +---+---+---+---+---+---+---+---+---+---+\n");
-  printf("    A   B   C   D   E   F   G   H   I   J\n\n");
+  printf("  +----+----+----+----+----+----+----+----+----+----+\n");
+  printf("    A    B    C    D    E    F    G    H    I    J\n\n");
 }
