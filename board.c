@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "board.h"
+#include "moves.h"
 
 // Changes chess rank like 3rd rank to corresponding array index 
 int rankToRow(int rank)
@@ -211,6 +212,8 @@ void setupBoard(Board *board)
   const char *startingFEN = "rnbaqkanbr/pppppppppp/10/10/10/10/PPPPPPPPPP/RNBAQKANBR";
 
   loadBoardFromFEN(board, startingFEN);
+  board->currentTurn = WHITE;
+  board->moveCount = 0;
 }
 
 // Returns the piece object that resides on a particular square
@@ -226,18 +229,26 @@ void movePiece(Board *board, int fromRow, int fromColumn, int toRow, int toColum
   // Function in charge of moving piece from some place to some place
   // Validation should have already happened in moves so
   // you don't need validation here
+  Piece empty;
+  empty.color = NONE;
+  empty.pieceType = EMPTY;
+  Piece movedPiece = board->squares[fromRow][fromColumn];
+  replacePiece(board, toRow, toColumn, movedPiece);
+  replacePiece(board, fromRow, fromColumn, empty);
 }
 
 // Function replaces a piece during exchanges or promotions or removes
 // it in case of En Passant or anteater captures
-void replacePiece(Board *board, int row, int column, PieceType newPiece)
+void replacePiece(Board *board, int row, int column, Piece newPiece)
 {
+  board->squares[row][column] = newPiece;
 }
 
 void showBoard(Board *board)
 {
   int r, c;
 
+  printf("Move number %d", board->moveCount + 1);
   printf("\n    A    B    C    D    E    F    G    H    I    J\n");
   for (r = 0; r < ROWS; r++)
   {
@@ -261,4 +272,5 @@ void showBoard(Board *board)
   }
   printf("  +----+----+----+----+----+----+----+----+----+----+\n");
   printf("    A    B    C    D    E    F    G    H    I    J\n\n");
+  printf("Current Turn: %s", board->currentTurn == WHITE ? "WHITE" : "BLACK");
 }
