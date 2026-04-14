@@ -1,6 +1,7 @@
 // File in charge of computing moves and validating them
 
 #include "moves.h"
+#include "rules.h"
 
 Move createMove(int fromRow, int fromCol, int toRow, int toCol)
 {
@@ -24,6 +25,8 @@ void possibleMoves(Piece *piece, Board *board, int row, int col, MoveList *avail
   case (KNIGHT):
     possibleLeapingMoves(piece, board, row, col, availableMoves);
     break;
+  default:
+    break;
   }
 }
 
@@ -32,11 +35,11 @@ void addNeighbors(Piece *piece, Board *board, int row, int col, int rowOffset, i
   // Take direction from user and increment in that direction
   int currentRow = row + rowOffset;
   int currentCol = col + colOffset;
-  while (currentRow >= 0 && currentRow <= 7 && currentCol >= 0 && currentCol <= 9)
+  while (isInsideBoard(currentRow, currentCol))
   {
     // If the squarein direction is occupied by opposite color
-    if (getPiece(board, currentRow, currentCol).pieceType != EMPTY &&
-        getPiece(board, currentRow, currentCol).color != piece->color)
+    
+    if (isEnemyPiece(getPiece(board, currentRow, currentCol), piece->color))
     {
       availableMoves->list[availableMoves->index] =
           createMove(row, col, currentRow, currentCol);
@@ -44,8 +47,7 @@ void addNeighbors(Piece *piece, Board *board, int row, int col, int rowOffset, i
       break;
     }
     // If the square in direction is occupied by same color
-    else if (getPiece(board, currentRow, currentCol).pieceType != EMPTY &&
-             getPiece(board, currentRow, currentCol).color == piece->color)
+    else if (isOwnPiece(getPiece(board, currentRow, currentCol), piece->color))
     {
       break;
     }
@@ -130,15 +132,12 @@ void possibleLeapingMoves(Piece *piece, Board *board, int row, int col, MoveList
     int newCol = col + offsets[i][1];
 
     // Skip this move if it goes off the board
-    if (newRow < 0 || newRow > 7 || newCol < 0 || newCol > 9)
-    {
-      continue;
-    }
+    if (!isInsideBoard(newRow, newCol)) continue;
 
-    // Get the piece ont the target square and check if it is empty or not a friendly piece and add it.
+    // Get the piece on the target square and check if it is empty or not a friendly piece and add it.
     Piece target = getPiece(board, newRow, newCol);
 
-    if (target.pieceType == EMPTY || target.color != piece->color)
+    if (!isOwnPiece(target, piece->color))
     {
       availableMoves->list[availableMoves->index] = createMove(row, col, newRow, newCol);
       availableMoves->index++;
