@@ -11,25 +11,24 @@ int main()
   setupBoard(boardPtr);
   showBoard(boardPtr);
 
-/*Control Flow Loop
-1. Ask user to input moves
-2. input validation (check if user input proper notations)
-3. isPieceCheck (check if there exist a piece)
-4. Piece color check( make sure the piece is the proper color)
-5. Check which piece type is it
-6. Check if the move is possible for the corresponding Piece type
-7. Check if the move is valid via Rule Check (ex: if the move make the king in check)
-IF ANY VALIDATION FAIL LOOP BACK TO 1 AND ASK USER AGAIN
-8. If all validation is correct then move is legal --> execute the move
-9. Check if move remove a piece from the board
-    9.2. if true then remove piece first
-10. Check if the move is one of the special move(castling, promotion, en passant, etc. )
-    10.2 If the move is promotion, change the piece type, then update the move with the move
-11. Execute the move
-12. Check if checkmate/stalemate
-    12.2 If true kill the loop and end the game (END LOOP)
-13. Swith Color
-LOOP BACK TO 1
+/*
+Loop instruction
+1. Ask user to input move
+2. Input validation(make sure input is in correct notation)
+3. Check if there is a piece in that space
+4.Check if the piece is the correct color of the current player turn(if player is white side
+then they cannot play a black piece)
+5. Check the piece type
+6.Check if the move is legal with corresponding piece type
+7.Check if the move causes issue such as if it make the king in check of if it is already in check
+8.Check if the move is a special move is the special type (castling, en passant, promotion)
+9. If the move is to take a piece then remove the taken piece first
+IF ANY OF THE VALIDATION FAIL THEN LOOP BACK TO USER PROMPT (1)
+10. Excute move if all validation pass
+11. Update the board/game state
+11. Switch the color
+13. Loop
+IF THE GAME STATE IS CHECKMATE OR STALEMATE, LOOP IS DEAD
 */
 
   return 0;
