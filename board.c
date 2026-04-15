@@ -231,9 +231,15 @@ void movePiece(Board *board, int fromRow, int fromColumn, int toRow, int toColum
   Piece empty;
   empty.color = NONE;
   empty.pieceType = EMPTY;
+
   Piece movedPiece = board->squares[fromRow][fromColumn];
+
+  board->history[board->moveCount] = (Move){fromRow, fromColumn, toRow, toColumn};
+
   replacePiece(board, toRow, toColumn, movedPiece);
   replacePiece(board, fromRow, fromColumn, empty);
+
+  board->moveCount++;
 }
 
 // Function replaces a piece during exchanges or promotions or removes

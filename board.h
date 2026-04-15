@@ -7,8 +7,21 @@
 #define COLS 10
 
 typedef struct {
+	int fromRow;
+	int fromCol;
+	int toRow;
+	int toCol;
+} Move;
+
+typedef struct {
+	Move list[500];
+	int index;
+} MoveList;
+
+typedef struct {
   Piece squares[8][10];
   Color currentTurn;
+  Move history[512];
   int moveCount;
 } Board;
 
@@ -21,8 +34,7 @@ void emptyBoard(Board* board);
 void setupBoard(Board* board);
 int loadBoardFromFEN(Board *board, const char *fen);
 Piece getPiece(Board* board, int row, int column);
-void movePiece(Board* board, int fromRow, int fromColumn, 
-                int toRow, int toColumn);
+void movePiece(Board* board, int fromRow, int fromColumn, int toRow, int toColumn);
 void replacePiece(Board* board, int row, int column, Piece newPiece);
 void showBoard(Board* board);
 
