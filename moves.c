@@ -2,6 +2,7 @@
 
 #include "moves.h"
 #include "rules.h"
+#include <stdlib.h>
 
 Move createMove(int fromRow, int fromCol, int toRow, int toCol)
 {
