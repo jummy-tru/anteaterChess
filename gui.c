@@ -62,10 +62,13 @@ static GtkWidget     *g_status_label = NULL;
 static void refresh_cell(int r, int c){
     Piece p = getPiece(&g_board, r, c);
     const char *img = piece_image(p);
-    if (img)
-        gtk_image_set_from_file(GTK_IMAGE(g_cells[r][c].pc_img), img);
-    else
+    if (img) {
+        GdkPixbuf *buf = gdk_pixbuf_new_from_file_at_scale(img, SQ, SQ, FALSE, NULL);
+        gtk_image_set_from_pixbuf(GTK_IMAGE(g_cells[r][c].pc_img), buf);
+        g_object_unref(buf);
+    } else {
         gtk_image_clear(GTK_IMAGE(g_cells[r][c].pc_img));
+    }
 }
  
 static void refresh_all(void){
