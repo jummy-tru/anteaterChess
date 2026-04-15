@@ -8,7 +8,7 @@
 #include "moves.h"
 #include "rules.h"
 
-#define SQ 140
+#define SQ 80
 
 static const char *piece_image(Piece p)
 {
