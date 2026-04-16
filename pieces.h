@@ -1,5 +1,6 @@
 #ifndef PIECES_H
 #define PIECES_H
+#include <stdbool.h>
 
 // File responsible for defining what piece struct is and what values
 // are allowed by using enumerations
@@ -23,6 +24,7 @@ typedef enum {
 typedef struct {
   PieceType pieceType;
   Color color;
+  bool hasMoved;
 } Piece;
 
 #endif

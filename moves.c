@@ -235,7 +235,158 @@ void possiblePawnMoves(Piece *piece, Board *board, int row, int col, MoveList *a
 
 }
 
-void possibleAnteaterMoves()
+void possibleKingMoves(Piece *piece, Board *board, int row, int col, MoveList *availableMoves){
+  
+
+  //All possible direction the king can move (1 spaces move)
+  int offsets[8][2]={
+    {-1,-1}, {-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}
+  };
+
+  for (int i =0; i <8; i++){
+    int newRow = row + offsets[i][0];
+    int newCol = col +offsets[i][1];
+
+    //Check if inside board
+    if(!isInsideBoard){
+      continue;
+    }
+    
+    //Check if there is a piece is there
+    Piece target = getPiece(board,newRow,newCol);
+    Move move = createMove(row,col,newRow,newCol);
+
+    //Check if the move is valid including if the move makes the king in check
+    if(!isOwnPiece(target, piece-> color) && !isInCheckAfterMove(board, move)){
+      availableMoves->list[availableMoves->index] = move;
+      availableMoves->index++;
+    }
+
+    
+  }
+
+  //Castling
+    
+    //KING SIDE (White)
+    if(piece->color == WHITE && row == 7 && col == 5){
+      Piece rook = getPiece(board,7,9);
+      //Check if rook moved yet
+      if(rook.pieceType == ROOK && !rook.hasMoved){
+        //Check if space between King and Rook are empty
+        if(getPiece(board,7,6).pieceType == EMPTY && getPiece(board,7,7).pieceType == EMPTY &&
+          getPiece(board,7,8).pieceType== EMPTY){
+           
+
+            Move castling = createMove(row,col,7,7);
+
+            if(!isInCheckAfterMove(board,castling)){
+              availableMoves->list[availableMoves->index] = castling;
+              availableMoves -> index++;
+            }
+        }
+      }
+    }
+    //KING SIDE (BLACK)
+    if(piece->color == BLACK && row == 0 && col == 5){
+      Piece rook = getPiece(board,0,9);
+      //Check if the rook moved
+      if(rook.pieceType == ROOK && !rook.hasMoved){
+        //Check if space between King and Rook are empty
+        if(getPiece(board,0,6).pieceType == EMPTY && getPiece(board,0,7).pieceType == EMPTY &&
+          getPiece(board,0,8).pieceType== EMPTY){
+            
+
+            Move castling = createMove(row,col,0,7);
+
+            if(!isInCheckAfterMove(board,castling)){
+              availableMoves->list[availableMoves->index] = castling;
+              availableMoves -> index++;
+            }
+        }
+      }
+    }
+    //QUEEN SIDE (WHITE)
+    if(piece->color == WHITE && row == 7 && col == 5){
+      Piece rook = getPiece(board,7,0);
+      //Check if the rook moved
+      if(rook.pieceType == ROOK && !rook.hasMoved){
+        //Check if space between King and Rook are empty
+        if(getPiece(board,7,0).pieceType == EMPTY && getPiece(board,7,1).pieceType == EMPTY &&
+          getPiece(board,7,2).pieceType== EMPTY && getPiece(board,7,3).pieceType == EMPTY){
+            
+
+            Move castling = createMove(row,col,7,3);
+
+            if(!isInCheckAfterMove(board,castling)){
+              availableMoves->list[availableMoves->index] = castling;
+              availableMoves -> index++;
+            }
+        }
+      }
+    }
+    //QUEEN SIDE (BLACK)
+    if(piece->color == BLACK && row == 0 && col == 5){
+      Piece rook = getPiece(board,0,0);
+      //Check if the rook moved
+      if(rook.pieceType == ROOK && !rook.hasMoved){
+        //Check if space between King and Rook are empty
+        if(getPiece(board,0,0).pieceType == EMPTY && getPiece(board,0,1).pieceType == EMPTY &&
+          getPiece(board,0,2).pieceType== EMPTY && getPiece(board,0,3).pieceType == EMPTY){
+            
+
+            Move castling = createMove(row,col,0,3);
+
+            if(!isInCheckAfterMove(board,castling)){
+              availableMoves->list[availableMoves->index] = castling;
+              availableMoves -> index++;
+            }
+        }
+      }
+    }
+}
+
+void possibleAnteaterMoves(Piece *piece, Board *board, int row, int col, MoveList *availableMoves)
 {
-  // good luck
+  //I am still theorizing the AntEater capture logic, and in desperate need of help- Jim
+
+
+   //All possible direction the antEater can move (1 spaces move, move the same as the king
+  int offsets[8][2]={
+    {-1,-1}, {-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}
+  };
+
+  for (int i =0; i <8; i++){
+    int newRow = row + offsets[i][0];
+    int newCol = col +offsets[i][1];
+
+    //Check if inside board
+    if(!isInsideBoard){
+      continue;
+    }
+    
+    //Check if there is a piece is there
+    Piece target = getPiece(board,newRow,newCol);
+    Move move = createMove(row,col,newRow,newCol);
+
+    //Check if the move is valid including if the move makes the king in check
+    if(!isOwnPiece(target, piece-> color) && !isInCheckAfterMove(board, move)){
+      availableMoves->list[availableMoves->index] = move;
+      availableMoves->index++;
+    }
+
+    
+  }
+
+  /*Capture Logic
+  1. Need to check if the piece is a pawn
+  2. Check if the pawn is NOT diagonal to the anteater
+  3.Check if the pawn is chained to another pawn (NOT DIAGONAL)
+  4.Maybe can leap like a knight but idk
+  note: HELP HELP HELP HELP HELP HELP HELP HELP HELP
+  HELP HELP HELP HELP HELP HELP HELP HELP HELP HELP HELP
+  HELP HELP HELP HELP HELP HELP HELP HELP HELP HELP HELP 
+  */
+
+
+  
 }
