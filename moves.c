@@ -11,6 +11,7 @@ Move createMove(int fromRow, int fromCol, int toRow, int toCol)
   move.fromCol = fromCol;
   move.toRow = toRow;
   move.toCol = toCol;
+  move.isCastling = false;
   return move;
 }
 
@@ -26,9 +27,14 @@ void possibleMoves(Piece *piece, Board *board, int row, int col, MoveList *avail
   case (KNIGHT):
     possibleLeapingMoves(piece, board, row, col, availableMoves);
     break;
-  case PAWN:
+  case (PAWN):
     possiblePawnMoves(piece, board, row, col, availableMoves);
     break;
+  case (KING):
+    possibleKingMoves(piece, board, row, col, availableMoves);
+    break;
+  case (ANTEATER):
+    possibleAnteaterMoves(piece, board, row, col, availableMoves);
   default:
     break;
   }
@@ -237,106 +243,128 @@ void possiblePawnMoves(Piece *piece, Board *board, int row, int col, MoveList *a
 
 void possibleKingMoves(Piece *piece, Board *board, int row, int col, MoveList *availableMoves){
   
-
   //All possible direction the king can move (1 spaces move)
-  int offsets[8][2]={
-    {-1,-1}, {-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}
+  int offsets[8][2] = {
+    {-1,-1}, {-1,0}, {-1,1}, {0,-1}, {0,1}, {1,-1}, {1,0}, {1,1}
   };
 
-  for (int i =0; i <8; i++){
+  for (int i = 0; i < 8; i++){
     int newRow = row + offsets[i][0];
-    int newCol = col +offsets[i][1];
+    int newCol = col + offsets[i][1];
 
-    //Check if inside board
-    if(!isInsideBoard){
+    // Skip move if outside board
+    if (!isInsideBoard) {
       continue;
     }
     
-    //Check if there is a piece is there
+    // Check if there is a piece is there
     Piece target = getPiece(board,newRow,newCol);
     Move move = createMove(row,col,newRow,newCol);
 
-    //Check if the move is valid including if the move makes the king in check
-    if(!isOwnPiece(target, piece-> color) && !isInCheckAfterMove(board, move)){
+    // Add move as pseudolegal if adjacent square is empty or opposite color
+    if(!isOwnPiece(target, piece-> color)){
       availableMoves->list[availableMoves->index] = move;
       availableMoves->index++;
     }
-
-    
   }
 
   //Castling
     
     //KING SIDE (White)
-    if(piece->color == WHITE && row == 7 && col == 5){
-      Piece rook = getPiece(board,7,9);
+    if (piece->color == WHITE && row == 7 && col == 5) {
+      int rookRow = rankToRow(1);
+      int rookCol = fileToCol('J');
+      Piece rook = getPiece(board,rookRow,rookCol);
       //Check if rook moved yet
       if(rook.pieceType == ROOK && !rook.hasMoved){
         //Check if space between King and Rook are empty
-        if(getPiece(board,7,6).pieceType == EMPTY && getPiece(board,7,7).pieceType == EMPTY &&
-          getPiece(board,7,8).pieceType== EMPTY){
-           
-
+        if(getPiece(board, rookRow, rookCol - 1).pieceType == EMPTY && getPiece(board, rookRow, rookCol - 2).pieceType == EMPTY &&
+          getPiece(board, rookRow, rookCol - 3).pieceType== EMPTY) {
+            
+            Move inBetween = createMove(row,col,7,6);
             Move castling = createMove(row,col,7,7);
-
-            if(!isInCheckAfterMove(board,castling)){
+            castling.isCastling = true;
+            
+            // We don't have to check the castle move itself for legality,
+            // since it's handled in rules.c, but we have to check the in between
+            if(!isInCheckAfterMove(board,inBetween)){
               availableMoves->list[availableMoves->index] = castling;
-              availableMoves -> index++;
+              availableMoves->index++;
             }
         }
       }
     }
     //KING SIDE (BLACK)
-    if(piece->color == BLACK && row == 0 && col == 5){
-      Piece rook = getPiece(board,0,9);
+    if (piece->color == BLACK && row == 0 && col == 5) {
+      int rookRow = rankToRow(8);
+      int rookCol = fileToCol('J');
+      Piece rook = getPiece(board, rookRow, rookCol);
       //Check if the rook moved
-      if(rook.pieceType == ROOK && !rook.hasMoved){
+      if(rook.pieceType == ROOK && !rook.hasMoved) {
         //Check if space between King and Rook are empty
-        if(getPiece(board,0,6).pieceType == EMPTY && getPiece(board,0,7).pieceType == EMPTY &&
-          getPiece(board,0,8).pieceType== EMPTY){
-            
+        if (getPiece(board, rookRow, rookCol - 1).pieceType == EMPTY && getPiece(board, rookRow, rookCol - 2).pieceType == EMPTY &&
+          getPiece(board, rookRow, rookCol - 3).pieceType== EMPTY) {
 
-            Move castling = createMove(row,col,0,7);
+            // We don't have to check the castle move itself for legality,
+            // since it's handled in rules.c, but we have to check the in between
+            Move castling = createMove(row, col, 0, 7);
+            Move inBetween = createMove(row, col, 0, 6);
+            castling.isCastling = true;
 
-            if(!isInCheckAfterMove(board,castling)){
+            if (!isInCheckAfterMove(board, inBetween)) {
               availableMoves->list[availableMoves->index] = castling;
               availableMoves -> index++;
             }
         }
       }
     }
-    //QUEEN SIDE (WHITE)
-    if(piece->color == WHITE && row == 7 && col == 5){
-      Piece rook = getPiece(board,7,0);
-      //Check if the rook moved
-      if(rook.pieceType == ROOK && !rook.hasMoved){
-        //Check if space between King and Rook are empty
-        if(getPiece(board,7,0).pieceType == EMPTY && getPiece(board,7,1).pieceType == EMPTY &&
-          getPiece(board,7,2).pieceType== EMPTY && getPiece(board,7,3).pieceType == EMPTY){
-            
+    // QUEEN SIDE (WHITE)
+    if (piece->color == WHITE && row == 7 && col == 5) {
+      int rookRow = rankToRow(1);
+      int rookCol = fileToCol('A');
+      Piece rook = getPiece(board, rookRow, rookCol);
 
+      //Check if the rook moved
+      if(rook.pieceType == ROOK && !rook.hasMoved) {
+        //Check if space between King and Rook are empty
+        if (getPiece(board, rookRow, rookCol + 1).pieceType == EMPTY && getPiece  
+          (board, rookRow, rookCol + 1).pieceType == EMPTY &&
+          getPiece(board, rookRow, rookCol + 2).pieceType== EMPTY && getPiece(board,
+          rookRow, rookCol + 3).pieceType == EMPTY && getPiece(board,rookRow, 
+          rookCol + 4).pieceType == EMPTY) {
+            
+            // We don't have to check the castle move itself for legality,
+            // since it's handled in rules.c, but we have to check the in between
             Move castling = createMove(row,col,7,3);
+            Move inBetween = createMove(row,col,7,4);
+            castling.isCastling = true;
 
-            if(!isInCheckAfterMove(board,castling)){
+            if(!isInCheckAfterMove(board,inBetween)){
               availableMoves->list[availableMoves->index] = castling;
               availableMoves -> index++;
             }
         }
       }
     }
-    //QUEEN SIDE (BLACK)
-    if(piece->color == BLACK && row == 0 && col == 5){
-      Piece rook = getPiece(board,0,0);
+
+    // QUEEN SIDE (BLACK)
+    if (piece->color == BLACK && row == 0 && col == 5) {
+      int rookRow = rankToRow(8);
+      int rookCol = fileToCol('A');
+      Piece rook = getPiece(board, rookRow, rookCol);
       //Check if the rook moved
-      if(rook.pieceType == ROOK && !rook.hasMoved){
+      if (rook.pieceType == ROOK && !rook.hasMoved) {
         //Check if space between King and Rook are empty
-        if(getPiece(board,0,0).pieceType == EMPTY && getPiece(board,0,1).pieceType == EMPTY &&
-          getPiece(board,0,2).pieceType== EMPTY && getPiece(board,0,3).pieceType == EMPTY){
-            
+        if (getPiece(board, rookRow, rookCol + 1).pieceType == EMPTY && getPiece(board, rookRow, rookCol + 2).pieceType == EMPTY &&
+          getPiece(board, rookRow, rookCol + 3).pieceType== EMPTY && getPiece(board, rookRow, rookCol + 4).pieceType == EMPTY){
 
             Move castling = createMove(row,col,0,3);
-
-            if(!isInCheckAfterMove(board,castling)){
+            Move inBetween = createMove(row,col,0,4);
+            castling.isCastling = true;
+            
+            // We don't have to check the castle move itself for legality,
+            // since it's handled in rules.c, but we have to check the in between
+            if (!isInCheckAfterMove(board, inBetween)) {
               availableMoves->list[availableMoves->index] = castling;
               availableMoves -> index++;
             }
@@ -359,7 +387,7 @@ void possibleAnteaterMoves(Piece *piece, Board *board, int row, int col, MoveLis
     int newRow = row + offsets[i][0];
     int newCol = col +offsets[i][1];
 
-    //Check if inside board
+    // Skip move if outside board
     if(!isInsideBoard){
       continue;
     }
@@ -368,13 +396,11 @@ void possibleAnteaterMoves(Piece *piece, Board *board, int row, int col, MoveLis
     Piece target = getPiece(board,newRow,newCol);
     Move move = createMove(row,col,newRow,newCol);
 
-    //Check if the move is valid including if the move makes the king in check
-    if(!isOwnPiece(target, piece-> color) && !isInCheckAfterMove(board, move)){
+    // Add to pseudolegal moves if the square is empty or opposite color
+    if(target.pieceType == EMPTY || (target.pieceType == PAWN && target.color != piece->color)) {
       availableMoves->list[availableMoves->index] = move;
       availableMoves->index++;
     }
-
-    
   }
 
   /*Capture Logic
@@ -385,6 +411,7 @@ void possibleAnteaterMoves(Piece *piece, Board *board, int row, int col, MoveLis
   note: HELP HELP HELP HELP HELP HELP HELP HELP HELP
   HELP HELP HELP HELP HELP HELP HELP HELP HELP HELP HELP
   HELP HELP HELP HELP HELP HELP HELP HELP HELP HELP HELP 
+  BROTHER LOCK IN
   */
 
 

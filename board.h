@@ -11,6 +11,7 @@ typedef struct {
 	int fromCol;
 	int toRow;
 	int toCol;
+	bool isCastling;
 } Move;
 
 typedef struct {

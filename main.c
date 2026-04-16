@@ -17,7 +17,8 @@ int main(int argc, char *argv[])
   Board *boardPtr = &board;
   setupBoard(boardPtr);
   showBoard(boardPtr);
- /*
+  /*
+  
 /*
 Loop instruction
 1. Ask user to input move

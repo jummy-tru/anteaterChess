@@ -94,14 +94,20 @@ static int is_legal_target(int r, int c){
     return 0;
 }
 
+// Only use when move is known to be legal
+static Move get_played_move(int r, int c) {
+    for (int i = 0; i < g_hints.index; i++)
+        if (g_hints.list[i].toRow == r && g_hints.list[i].toCol == c)
+            return g_hints.list[i];
+}
+
 static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud){
     (void)w; (void)ev;
     int row = GPOINTER_TO_INT(ud) / 100;
     int col = GPOINTER_TO_INT(ud) % 100;
  
     Piece clicked = getPiece(&g_board, row, col);
-    int own = (clicked.pieceType != EMPTY &&
-               clicked.color == g_board.currentTurn);
+    int own = isOwnPiece(clicked, g_board.currentTurn);
  
     if (!g_selected) {
         if (own) {
@@ -113,6 +119,26 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud){
         }
     } else {
         if (is_legal_target(row, col)) {
+            Move playedMove = get_played_move(row, col);
+            if (playedMove.isCastling == true)
+            {
+                // Black queenside castle
+                if (col < g_sel_col && g_board.currentTurn == BLACK) {
+                    movePiece(&g_board, 0, 0, 0, 4);
+                }
+                // White queenside castle
+                if (col < g_sel_col && g_board.currentTurn == WHITE) {
+                    movePiece(&g_board, 7, 0, 7, 4);
+                }
+                // Black kingside castle
+                if (col > g_sel_col && g_board.currentTurn == BLACK) {
+                    movePiece(&g_board, 0, 9, 0, 6);
+                }
+                // White kingside castle
+                if (col > g_sel_col && g_board.currentTurn == WHITE) {
+                    movePiece(&g_board, 7, 9, 7, 6);
+                }
+            }
             movePiece(&g_board, g_sel_row, g_sel_col, row, col);
             g_board.moveCount++;
             g_board.currentTurn =
@@ -131,7 +157,7 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud){
             g_hints.index = 0;
         }
     }
- 
+
     return TRUE;
 }
 
