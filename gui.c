@@ -145,7 +145,7 @@ static void on_new_game(GtkButton *b, gpointer d)
     update_status();
 }
 
-int main(int argc, char *argv[])
+int run_gui(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
     setupBoard(&g_board);

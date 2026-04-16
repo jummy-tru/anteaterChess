@@ -1,16 +1,23 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <gtk/gtk.h>
+
 #include "pieces.h"
 #include "board.h"
 #include "moves.h"
 #include "controller.h"
+#include "gui.h"
 
-int main()
+int main(int argc, char *argv[])
 {
-  Board board;
+  run_gui(argc, argv);
+
+  /*Board board;
   Board *boardPtr = &board;
   setupBoard(boardPtr);
   showBoard(boardPtr);
-
+ /*
 /*
 Loop instruction
 1. Ask user to input move
