@@ -54,10 +54,21 @@ typedef struct {
     GtkWidget *overlay;
     GtkWidget *sq_img;   //board tile
     GtkWidget *pc_img;   //piece image
+    GtkWidget *hi_img;   //highlighted piece when clicked
 } Cell;
  
 static Cell           g_cells[ROWS][COLS];
 static GtkWidget     *g_status_label = NULL;
+
+static void set_highlight(int r, int c, int highlighted) {
+    if (highlighted) {
+        // Updated to use your specific filename
+        gtk_image_set_from_file(GTK_IMAGE(g_cells[r][c].hi_img), "pieces/border.png");
+    } else {
+        // Clear the image when the square is not selected
+        gtk_image_clear(GTK_IMAGE(g_cells[r][c].hi_img));
+    }
+}
 
 static void refresh_cell(int r, int c){
     Piece p = getPiece(&g_board, r, c);
@@ -69,10 +80,20 @@ static void refresh_cell(int r, int c){
     }
 }
  
-static void refresh_all(void){
-    for (int r = 0; r < ROWS; r++)
-        for (int c = 0; c < COLS; c++)
+static void refresh_all(void) {
+    for (int r = 0; r < ROWS; r++) {        
+        for (int c = 0; c < COLS; c++) {   
+
             refresh_cell(r, c);
+            
+            if (g_selected && r == g_sel_row && c == g_sel_col) {
+                set_highlight(r, c, 1);
+            } else {
+                set_highlight(r, c, 0);
+            }
+            
+        }
+    }    
 }
 
 static void update_status(void){
@@ -110,6 +131,7 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud){
             g_sel_col = col;
             g_hints.index = 0;
             legalMovesForPiece(&g_board, row, col, &g_hints);
+            refresh_all();
         }
     } else {
         if (is_legal_target(row, col)) {
@@ -121,14 +143,17 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud){
             g_hints.index = 0;
             refresh_all();
             update_status();
+            refresh_all();
         } else if (own) {
             g_sel_row     = row;
             g_sel_col     = col;
             g_hints.index = 0;
             legalMovesForPiece(&g_board, row, col, &g_hints);
+            refresh_all();
         } else {
             g_selected    = 0;
             g_hints.index = 0;
+            refresh_all();
         }
     }
  
@@ -195,10 +220,14 @@ int run_gui(int argc, char *argv[])
             gtk_widget_set_size_request(cell->pc_img, SQ, SQ);
             gtk_widget_set_halign(cell->pc_img, GTK_ALIGN_FILL);
             gtk_widget_set_valign(cell->pc_img, GTK_ALIGN_FILL);
+
+            cell->hi_img = gtk_image_new();
+            gtk_widget_set_size_request(cell->hi_img, SQ, SQ);
  
             cell->overlay = gtk_overlay_new();
             gtk_container_add(GTK_CONTAINER(cell->overlay), cell->sq_img);
             gtk_overlay_add_overlay(GTK_OVERLAY(cell->overlay), cell->pc_img);
+            gtk_overlay_add_overlay(GTK_OVERLAY(cell->overlay), cell->hi_img);
  
             cell->event_box = gtk_event_box_new();
             gtk_container_add(GTK_CONTAINER(cell->event_box), cell->overlay);
