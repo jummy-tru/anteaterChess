@@ -40,7 +40,7 @@ static const char *piece_image(Piece p)
 }
 
 static Board g_board;
- 
+static GtkWidget *g_history_text = NULL;
 //Selection state
 static int g_selected   = 0;
 static int g_sel_row    = 0;
@@ -62,10 +62,8 @@ static GtkWidget     *g_status_label = NULL;
 
 static void set_highlight(int r, int c, int highlighted) {
     if (highlighted) {
-        // Updated to use your specific filename
         gtk_image_set_from_file(GTK_IMAGE(g_cells[r][c].hi_img), "pieces/border.png");
     } else {
-        // Clear the image when the square is not selected
         gtk_image_clear(GTK_IMAGE(g_cells[r][c].hi_img));
     }
 }
@@ -115,16 +113,45 @@ static int is_legal_target(int r, int c){
     return 0;
 }
 
-static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud){
+static void log_move_to_sidebar(Piece p, int fromR, int fromC, int toR, int toC) {
+    char move_str[64];
+    
+    char colorChar = (p.color == WHITE) ? 'w' : 'b';
+    char typeChar;
+    switch(p.pieceType) {
+        case PAWN:     typeChar = 'P'; break;
+        case ROOK:     typeChar = 'R'; break;
+        case KNIGHT:   typeChar = 'N'; break;
+        case BISHOP:   typeChar = 'B'; break;
+        case QUEEN:    typeChar = 'Q'; break;
+        case KING:     typeChar = 'K'; break;
+        case ANTEATER: typeChar = 'A'; break;
+        default:       typeChar = '?';
+    }
+
+    // Format: "1. wP: A2 -> A4"
+    snprintf(move_str, sizeof(move_str), "%d. %c%c: %c%d -> %c%d\n",
+             g_board.moveCount, colorChar, typeChar,
+             colToFile(fromC), rowToRank(fromR),
+             colToFile(toC), rowToRank(toC));
+
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(g_history_text));
+    GtkTextIter end;
+    gtk_text_buffer_get_end_iter(buffer, &end);
+    gtk_text_buffer_insert(buffer, &end, move_str, -1);
+}
+
+static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud) {
     (void)w; (void)ev;
     int row = GPOINTER_TO_INT(ud) / 100;
     int col = GPOINTER_TO_INT(ud) % 100;
- 
+
     Piece clicked = getPiece(&g_board, row, col);
     int own = (clicked.pieceType != EMPTY &&
                clicked.color == g_board.currentTurn);
- 
+
     if (!g_selected) {
+
         if (own) {
             g_selected = 1;
             g_sel_row = row;
@@ -135,28 +162,37 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud){
         }
     } else {
         if (is_legal_target(row, col)) {
+            Piece movingPiece = getPiece(&g_board, g_sel_row, g_sel_col);
+
             movePiece(&g_board, g_sel_row, g_sel_col, row, col);
-            g_board.moveCount++;
-            g_board.currentTurn =
-                (g_board.currentTurn == WHITE) ? BLACK : WHITE;
-            g_selected    = 0;
+
+            // 3. Log the move to your new sidebar
+            log_move_to_sidebar(movingPiece, g_sel_row, g_sel_col, row, col);
+
+            // 4. Update Game State
+            g_board.currentTurn = (g_board.currentTurn == WHITE) ? BLACK : WHITE;
+            g_selected = 0;
             g_hints.index = 0;
+            
+            // 5. Update Visuals
             refresh_all();
             update_status();
-            refresh_all();
+            
         } else if (own) {
-            g_sel_row     = row;
-            g_sel_col     = col;
+            // Switching selection to a different own piece
+            g_sel_row = row;
+            g_sel_col = col;
             g_hints.index = 0;
             legalMovesForPiece(&g_board, row, col, &g_hints);
             refresh_all();
         } else {
-            g_selected    = 0;
+            // Deselecting by clicking an empty square or invalid target
+            g_selected = 0;
             g_hints.index = 0;
             refresh_all();
         }
     }
- 
+
     return TRUE;
 }
 
@@ -175,24 +211,24 @@ int run_gui(int argc, char *argv[])
     gtk_init(&argc, &argv);
     setupBoard(&g_board);
     g_hints.index = 0;
- 
-    //Window
+
+    GtkWidget *grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 0);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 0);
+
     GtkWidget *win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(win), "Anteater Chess");
     gtk_window_set_resizable(GTK_WINDOW(win), FALSE);
     g_signal_connect(win, "destroy", G_CALLBACK(gtk_main_quit), NULL);
- 
+
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_container_set_border_width(GTK_CONTAINER(vbox), 8);
     gtk_container_add(GTK_CONTAINER(win), vbox);
- 
-    //board row
+
     GtkWidget *board_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_box_pack_start(GTK_BOX(vbox), board_row, FALSE, FALSE, 0);
- 
-    //rank labels
+
     GtkWidget *rank_col = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_pack_start(GTK_BOX(board_row), rank_col, FALSE, FALSE, 0);
     for (int r = 0; r < ROWS; r++) {
         char buf[4];
         snprintf(buf, sizeof buf, "%d", rowToRank(r));
@@ -200,13 +236,18 @@ int run_gui(int argc, char *argv[])
         gtk_widget_set_size_request(lbl, 20, SQ);
         gtk_box_pack_start(GTK_BOX(rank_col), lbl, FALSE, FALSE, 0);
     }
- 
-    //grid
-    GtkWidget *grid = gtk_grid_new();
-    gtk_grid_set_row_spacing(GTK_GRID(grid), 0);
-    gtk_grid_set_column_spacing(GTK_GRID(grid), 0);
+    gtk_box_pack_start(GTK_BOX(board_row), rank_col, FALSE, FALSE, 0);
+
     gtk_box_pack_start(GTK_BOX(board_row), grid, FALSE, FALSE, 0);
- 
+
+    g_history_text = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(g_history_text), FALSE);
+    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(g_history_text), FALSE);
+    gtk_widget_set_size_request(g_history_text, 200, -1);
+    
+    gtk_box_pack_start(GTK_BOX(board_row), g_history_text, FALSE, FALSE, 10);
+
+
     for (int r = 0; r < ROWS; r++) {
         for (int c = 0; c < COLS; c++) {
             Cell *cell = &g_cells[r][c];
