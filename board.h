@@ -25,6 +25,7 @@ typedef struct {
   Color currentTurn;
   Move history[512];
   int moveCount;
+	bool isAntEating;
 } Board;
 
 int rankToRow(int rank);
@@ -32,6 +33,7 @@ int rowToRank(int row);
 int fileToCol(char file);
 char colToFile(int col);
 
+void setPieceHasMoved(Board* board, int row, int col, bool hasMoved);
 void emptyBoard(Board* board);
 void setupBoard(Board* board);
 int loadBoardFromFEN(Board *board, const char *fen);

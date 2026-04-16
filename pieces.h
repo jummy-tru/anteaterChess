@@ -25,6 +25,7 @@ typedef struct {
   PieceType pieceType;
   Color color;
   bool hasMoved;
+  bool canCastle;
 } Piece;
 
 #endif

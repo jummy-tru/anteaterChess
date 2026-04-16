@@ -59,6 +59,7 @@ typedef struct {
  
 static Cell           g_cells[ROWS][COLS];
 static GtkWidget     *g_status_label = NULL;
+static GtkWidget     *btn_end_turn = NULL;
 
 static void set_highlight(int r, int c, int highlighted) {
     if (highlighted) {
@@ -142,6 +143,13 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud){
     } else {
         if (is_legal_target(row, col)) {
             Move playedMove = get_played_move(row, col);
+            Piece selected = getPiece(&g_board, g_sel_row, g_sel_col);
+            Piece target = getPiece(&g_board, row, col);
+            if (selected.pieceType == ANTEATER && target.pieceType == PAWN)
+            {
+                g_board.isAntEating = true;
+                gtk_widget_show(btn_end_turn);
+            }
             if (playedMove.isCastling == true)
             {
                 // Black queenside castle
@@ -160,19 +168,42 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud){
                 if (col > g_sel_col && g_board.currentTurn == WHITE) {
                     movePiece(&g_board, 7, 9, 7, 6);
                 }
+                setPieceHasMoved(&g_board, row, col, true);
             }
             if (playedMove.isEnPassant == true)
             {
                 removePiece(&g_board, g_sel_row, col);
             }
-            movePiece(&g_board, g_sel_row, g_sel_col, row, col);
-            g_board.currentTurn =
-                (g_board.currentTurn == WHITE) ? BLACK : WHITE;
-            g_selected    = 0;
-            g_hints.index = 0;
-            refresh_all();
-            update_status();
-            refresh_all();
+            if (g_board.isAntEating == false)
+            {      
+                movePiece(&g_board, g_sel_row, g_sel_col, row, col);
+                setPieceHasMoved(&g_board, row, col, true);
+                g_board.currentTurn =
+                    (g_board.currentTurn == WHITE) ? BLACK : WHITE;
+                g_selected    = 0;
+                g_hints.index = 0;
+                refresh_all();
+                update_status();
+                refresh_all();
+            }
+            else
+            {
+                movePiece(&g_board, g_sel_row, g_sel_col, row, col);
+                setPieceHasMoved(&g_board, row, col, true);
+                g_selected    = 0;
+                g_hints.index = 0;
+                legalMovesForPiece(&g_board, row, col, &g_hints);
+                if (g_hints.index == 0)
+                {
+                    g_board.isAntEating = false;
+                    gtk_widget_hide(btn_end_turn);
+                    g_board.currentTurn =
+                        (g_board.currentTurn == WHITE) ? BLACK : WHITE;
+                }
+                refresh_all();
+                update_status();
+                refresh_all();
+            }
         } else if (own) {
             g_sel_row     = row;
             g_sel_col     = col;
@@ -197,6 +228,17 @@ static void on_new_game(GtkButton *b, gpointer d)
     g_hints.index = 0;
     refresh_all();
     update_status();
+}
+
+static void end_turn(GtkButton *b, gpointer d)
+{
+    (void)b; (void)d;
+    g_board.isAntEating = false;
+    gtk_widget_hide(btn_end_turn);
+    g_board.currentTurn =
+        (g_board.currentTurn == WHITE) ? BLACK : WHITE;
+    update_status();
+    refresh_all();
 }
 
 int run_gui(int argc, char *argv[])
@@ -294,13 +336,17 @@ int run_gui(int argc, char *argv[])
  
     GtkWidget *btn_new  = gtk_button_new_with_label("New Game");
     GtkWidget *btn_quit = gtk_button_new_with_label("Quit");
+    btn_end_turn = gtk_button_new_with_label("End Turn");
     g_signal_connect(btn_new,  "clicked", G_CALLBACK(on_new_game),   NULL);
     g_signal_connect(btn_quit, "clicked", G_CALLBACK(gtk_main_quit), NULL);
+    g_signal_connect(btn_end_turn, "clicked", G_CALLBACK(end_turn), NULL);
     gtk_box_pack_start(GTK_BOX(btn_row), btn_new,  FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(btn_row), btn_quit, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(btn_row), btn_end_turn, FALSE, FALSE, 0);
  
     refresh_all();
     gtk_widget_show_all(win);
+    gtk_widget_hide(btn_end_turn);
     gtk_main();
     return 0;
 }

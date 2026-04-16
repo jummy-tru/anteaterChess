@@ -218,6 +218,16 @@ void legalMovesForPiece(Board *board, int row, int col, MoveList *legalMoves)
     pseudo.index = 0;
     legalMoves->index = 0;
 
+    if (board->moveCount > 0)
+    {
+        bool isAntEating = board->isAntEating;
+        // You can't move anything but that anteater if last move was anteating
+        if (isAntEating && (board->history[board->moveCount - 1].toRow != row || board->history[board->moveCount - 1].toCol != col))
+        {
+            return;
+        }
+    }
+
     // If the square is empty, there are no moves
     if (piece.pieceType == EMPTY)
     {

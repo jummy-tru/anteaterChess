@@ -29,6 +29,11 @@ char colToFile(int col)
   return ((char)(col+65));
 }
 
+void setPieceHasMoved(Board* board, int row, int col, bool hasMoved)
+{
+  board->squares[row][col].hasMoved = hasMoved;
+}
+
 void emptyBoard(Board *board)
 {
   for (int i = 0; i < 8; i++)
@@ -46,6 +51,7 @@ static Piece makePiece(PieceType type, Color color)
   Piece p;
   p.pieceType = type;
   p.color = color;
+  p.hasMoved = false;
   return p;
 }
 
@@ -213,6 +219,7 @@ void setupBoard(Board *board)
   loadBoardFromFEN(board, startingFEN);
   board->currentTurn = WHITE;
   board->moveCount = 0;
+  board->isAntEating = false;
 }
 
 // Returns the piece object that resides on a particular square
