@@ -12,6 +12,7 @@ typedef struct {
 	int toRow;
 	int toCol;
 	bool isCastling;
+	bool isEnPassant;
 } Move;
 
 typedef struct {
@@ -36,6 +37,7 @@ void setupBoard(Board* board);
 int loadBoardFromFEN(Board *board, const char *fen);
 Piece getPiece(Board* board, int row, int column);
 void movePiece(Board* board, int fromRow, int fromColumn, int toRow, int toColumn);
+void removePiece(Board *board, int row, int col);
 void replacePiece(Board* board, int row, int column, Piece newPiece);
 void showBoard(Board* board);
 

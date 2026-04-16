@@ -242,6 +242,12 @@ void movePiece(Board *board, int fromRow, int fromColumn, int toRow, int toColum
   board->moveCount++;
 }
 
+void removePiece(Board *board, int row, int col)
+{
+  Piece empty = makePiece(EMPTY, NONE);
+  replacePiece(board, row, col, empty);
+}
+
 // Function replaces a piece during exchanges or promotions or removes
 // it in case of En Passant or anteater captures
 void replacePiece(Board *board, int row, int column, Piece newPiece)

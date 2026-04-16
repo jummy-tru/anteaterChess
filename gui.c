@@ -139,8 +139,11 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud){
                     movePiece(&g_board, 7, 9, 7, 6);
                 }
             }
+            if (playedMove.isEnPassant == true)
+            {
+                removePiece(&g_board, g_sel_row, col);
+            }
             movePiece(&g_board, g_sel_row, g_sel_col, row, col);
-            g_board.moveCount++;
             g_board.currentTurn =
                 (g_board.currentTurn == WHITE) ? BLACK : WHITE;
             g_selected    = 0;

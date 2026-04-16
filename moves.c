@@ -12,6 +12,7 @@ Move createMove(int fromRow, int fromCol, int toRow, int toCol)
   move.toRow = toRow;
   move.toCol = toCol;
   move.isCastling = false;
+  move.isEnPassant = false;
   return move;
 }
 
@@ -232,7 +233,9 @@ void possiblePawnMoves(Piece *piece, Board *board, int row, int col, MoveList *a
         // Destination must be on board and empty
         if (isInsideBoard(enPassantRow, enPassantCol) && getPiece(board, enPassantRow, enPassantCol).pieceType == EMPTY)
         {
-          availableMoves->list[availableMoves->index] = createMove(row, col, enPassantRow, enPassantCol);
+          Move enPassant = createMove(row, col, enPassantRow, enPassantCol);
+          enPassant.isEnPassant = true;
+          availableMoves->list[availableMoves->index] = enPassant;
           availableMoves->index++;
         }
       }
