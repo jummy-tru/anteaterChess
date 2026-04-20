@@ -6,9 +6,6 @@ TARGET  = bin/anteater_chess
 SRC     = src/main.c src/gui.c src/board.c src/moves.c src/rules.c src/clock.c src/controller.c
 OBJ     = $(patsubst src/%.c, bin/%.o, $(SRC))
 
-tar: clean
-	tar -czvf Chess_Alpha_src.tar.gz README.md COPYRIGHT.md INSTALL.md Makefile bin/ doc/ src/
-
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
@@ -19,5 +16,8 @@ bin/%.o: src/%.c
 
 clean:
 	rm -f $(OBJ) $(TARGET)
+
+tar: clean
+	tar -czvf Chess_Alpha_src.tar.gz README.md COPYRIGHT.md INSTALL.md Makefile bin/ doc/ src/
 
 .PHONY: all clean tar
