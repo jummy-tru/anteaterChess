@@ -4,17 +4,20 @@ LDFLAGS = $(shell pkg-config --libs gtk+-3.0)
 
 TARGET  = bin/anteater_chess
 SRC     = src/main.c src/gui.c src/board.c src/moves.c src/rules.c src/clock.c src/controller.c
-OBJ     = $(SRC:.c=.o)
+OBJ     = $(patsubst src/%.c, bin/%.o, $(SRC))
+
+tar: clean
+	tar -czvf Chess_Alpha_src.tar.gz README.md COPYRIGHT.md INSTALL.md Makefile bin/ doc/ src/
 
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS)
 
-%.o: %.c
+bin/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJ) $(TARGET)
 
-.PHONY: all clean
+.PHONY: all clean tar
