@@ -29,4 +29,7 @@ tar_user: all
 	tar -czvf Chess_Alpha.tar.gz Chess_Alpha/
 	rm -rf Chess_Alpha
 
-.PHONY: all clean tar tar_user
+test: all
+	./$(TARGET)
+
+.PHONY: all clean tar tar_user test
