@@ -18,6 +18,6 @@ clean:
 	rm -f $(OBJ) $(TARGET)
 
 tar: clean
-	tar -czvf Chess_Alpha_src.tar.gz README.md COPYRIGHT.md INSTALL.md Makefile bin/ doc/ src/
+	tar -czvf Chess_Alpha_src.tar.gz README.md COPYRIGHT.md INSTALL.md Makefile bin/ doc/ src/ pieces/
 
 .PHONY: all clean tar
