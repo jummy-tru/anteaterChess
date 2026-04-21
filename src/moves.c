@@ -256,7 +256,7 @@ void possibleKingMoves(Piece *piece, Board *board, int row, int col, MoveList *a
     int newCol = col + offsets[i][1];
 
     // Skip move if outside board
-    if (!isInsideBoard) {
+    if (!isInsideBoard(newRow, newCol)) {
       continue;
     }
     
