@@ -46,6 +46,16 @@ void setPieceHasMoved(Board *board, int row, int col, bool hasMoved)
   board->squares[row][col].hasMoved = hasMoved;
 }
 
+static Piece makePiece(PieceType type, Color color)
+{
+  Piece p = {0};
+  p.pieceType = type;
+  p.color = color;
+  p.hasMoved = false;
+  p.canCastle = false;
+  return p;
+}
+
 void emptyBoard(Board *board)
 {
   for (int i = 0; i < 8; i++)
@@ -55,16 +65,6 @@ void emptyBoard(Board *board)
       board->squares[i][j] = makePiece(EMPTY, NONE);
     }
   }
-}
-
-static Piece makePiece(PieceType type, Color color)
-{
-  Piece p = {0};
-  p.pieceType = type;
-  p.color = color;
-  p.hasMoved = false;
-  p.canCastle = false;
-  return p;
 }
 
 static char pieceTypeChar(PieceType type)
