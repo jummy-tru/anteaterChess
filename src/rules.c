@@ -1,4 +1,5 @@
 #include "rules.h"
+#include <stdlib.h>
 
 // Returns true if the given row and column are inside the 8x10 board
 bool isInsideBoard(int row, int col)
@@ -94,6 +95,162 @@ bool findKing(Board *board, Color kingColor, int *kingRow, int *kingCol)
     return false;
 }
 
+bool isPathClear(Board *board, int fromRow, int fromCol, int targetRow, int targetCol)
+{
+    // These determine how row/col should change each step:
+    // -1 means move backward
+    //  0 means stay in same row/col
+    // +1 means move forward
+    int rowStep = 0;
+    int colStep = 0;
+
+    // Figure out vertical direction
+    if (targetRow > fromRow) rowStep = 1;
+    else if (targetRow < fromRow) rowStep = -1;
+
+    // Figure out horizontal direction
+    if (targetCol > fromCol) colStep = 1;
+    else if (targetCol < fromCol) colStep = -1;
+
+    // Start at the square immediately after the piece
+    int r = fromRow + rowStep;
+    int c = fromCol + colStep;
+
+    // Walk square-by-square until reaching the target square
+    while (r != targetRow || c != targetCol)
+    {
+        // If any square in between is occupied,
+        // the path is blocked
+        if (getPiece(board, r, c).pieceType != EMPTY)
+        {
+            return false;
+        }
+
+        r += rowStep;
+        c += colStep;
+    }
+
+    // No blocking pieces were found
+    return true;
+}
+
+bool pieceAttacksSquare(Board *board, int fromRow, int fromCol, int targetRow, int targetCol)
+{
+    // Get the piece that might be attacking
+    Piece p = getPiece(board, fromRow, fromCol);
+
+    // Empty squares cannot attack anything
+    if (p.pieceType == EMPTY)
+    {
+        return false;
+    }
+
+    // Difference from piece position to target position
+    int dRow = targetRow - fromRow;
+    int dCol = targetCol - fromCol;
+
+    switch (p.pieceType)
+    {
+        case PAWN:
+        {
+            // White pawns attack upward (-1 row)
+            // Black pawns attack downward (+1 row)
+            int direction = (p.color == WHITE) ? -1 : 1;
+
+            // A pawn attacks one row forward diagonally left/right
+            if (dRow == direction && (dCol == -1 || dCol == 1))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        case KNIGHT:
+        {
+            // Knight attacks in an L-shape:
+            // 2 in one direction, 1 in the other
+            if ((abs(dRow) == 2 && abs(dCol) == 1) ||
+                (abs(dRow) == 1 && abs(dCol) == 2))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        case KING:
+        {
+            // King attacks all 8 surrounding squares
+            if (abs(dRow) <= 1 && abs(dCol) <= 1 &&
+                !(dRow == 0 && dCol == 0))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        case ROOK:
+        {
+            // Rook attacks along rows or columns,
+            // but only if no pieces block the path
+            if ((dRow == 0 || dCol == 0) &&
+                !(dRow == 0 && dCol == 0) &&
+                isPathClear(board, fromRow, fromCol, targetRow, targetCol))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        case BISHOP:
+        {
+            // Bishop attacks diagonally,
+            // but only if no pieces block the path
+            if (abs(dRow) == abs(dCol) &&
+                dRow != 0 &&
+                isPathClear(board, fromRow, fromCol, targetRow, targetCol))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        case QUEEN:
+        {
+            // Queen attacks like both rook and bishop:
+            // straight or diagonal, as long as the path is clear
+            if (((dRow == 0 || dCol == 0) || (abs(dRow) == abs(dCol))) &&
+                !(dRow == 0 && dCol == 0) &&
+                isPathClear(board, fromRow, fromCol, targetRow, targetCol))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        case ANTEATER:
+        {
+            // Anteater attacks the 8 surrounding squares
+            // the same way the king moves
+            if (abs(dRow) <= 1 && abs(dCol) <= 1 &&
+                !(dRow == 0 && dCol == 0))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        default:
+            return false;
+    }
+}
+
 // Checks whether a target square is attacked by any piece of byColor
 // It does this by generating possible moves for every piece of that color
 // and checking if any of those moves land on the target square
@@ -105,31 +262,21 @@ bool isSquareAttacked(Board *board, int targetRow, int targetCol, Color byColor)
         {
             Piece p = getPiece(board, r, c);
 
-            // Skip empty squares and pieces of the wrong color
+            // Skip empty squares and pieces of wrong color
             if (p.pieceType == EMPTY || p.color != byColor)
             {
                 continue;
             }
 
             // Generate attack squares for this piece
-            MoveList attacks;
-            attacks.index = 0;
-
-            possibleMoves(&p, board, r, c, &attacks);
-
-            // Check whether any generated move attacks the target square
-            for (int i = 0; i < attacks.index; i++)
+            if (pieceAttacksSquare(board, r, c, targetRow, targetCol))
             {
-                if (attacks.list[i].toRow == targetRow &&
-                    attacks.list[i].toCol == targetCol)
-                {
-                    return true;
-                }
+                return true;
             }
         }
     }
 
-    // No attacking piece was found
+    // No attacking pieces found
     return false;
 }
 

@@ -16,6 +16,8 @@ bool isPseudoLegalMove(Board *board, Move move);
 bool isLegalMove(Board *board, Move move);
 
 // King safety / attack detection
+bool pieceAttacksSquare(Board *board, int fromRow, int fromCol, int targetRow, int targetCol);
+bool isPathClear(Board *board, int fromRow, int fromCol, int targetRow, int targetCol);
 bool isSquareAttacked(Board *board, int targetRow, int targetCol, Color byColor);
 bool findKing(Board *board, Color kingColor, int *kingRow, int *kingCol);
 bool isInCheck(Board *board, Color color);
