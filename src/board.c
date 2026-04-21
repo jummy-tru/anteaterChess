@@ -5,7 +5,19 @@
 #include <ctype.h>
 #include "board.h"
 
-// Changes chess rank like 3rd rank to corresponding array index 
+Move createMove(int fromRow, int fromCol, int toRow, int toCol)
+{
+  Move move;
+  move.fromRow = fromRow;
+  move.fromCol = fromCol;
+  move.toRow = toRow;
+  move.toCol = toCol;
+  move.isCastling = false;
+  move.isEnPassant = false;
+  return move;
+}
+
+// Changes chess rank like 3rd rank to corresponding array index
 int rankToRow(int rank)
 {
   return (8 - rank);
@@ -26,10 +38,10 @@ int fileToCol(char file)
 // Reverse of the above
 char colToFile(int col)
 {
-  return ((char)(col+65));
+  return ((char)(col + 65));
 }
 
-void setPieceHasMoved(Board* board, int row, int col, bool hasMoved)
+void setPieceHasMoved(Board *board, int row, int col, bool hasMoved)
 {
   board->squares[row][col].hasMoved = hasMoved;
 }
@@ -40,18 +52,18 @@ void emptyBoard(Board *board)
   {
     for (int j = 0; j < 10; j++)
     {
-      board->squares[i][j].color = NONE;
-      board->squares[i][j].pieceType = EMPTY;
+      board->squares[i][j] = makePiece(EMPTY, NONE);
     }
   }
 }
 
 static Piece makePiece(PieceType type, Color color)
 {
-  Piece p;
+  Piece p = {0};
   p.pieceType = type;
   p.color = color;
   p.hasMoved = false;
+  p.canCastle = false;
   return p;
 }
 
@@ -241,10 +253,56 @@ void movePiece(Board *board, int fromRow, int fromColumn, int toRow, int toColum
 
   Piece movedPiece = board->squares[fromRow][fromColumn];
 
-  board->history[board->moveCount] = (Move){fromRow, fromColumn, toRow, toColumn};
+  board->history[board->moveCount] = createMove(fromRow, fromColumn, toRow, toColumn);
 
   replacePiece(board, toRow, toColumn, movedPiece);
   replacePiece(board, fromRow, fromColumn, empty);
+
+  board->moveCount++;
+}
+
+void applyMove(Board *board, Move move)
+{
+  Piece movingPiece = getPiece(board, move.fromRow, move.fromCol);
+  Piece empty = makePiece(EMPTY, NONE);
+
+  // Store the real move, including special flags
+  board->history[board->moveCount] = move;
+
+  // En passant: remove the pawn first
+  if (move.isEnPassant)
+  {
+    replacePiece(board, move.fromRow, move.toCol, empty);
+  }
+
+  // Castling: move the rook too
+  if (move.isCastling)
+  {
+    if (move.toCol > move.fromCol)
+    {
+      // Kingside castle
+      Piece rook = getPiece(board, move.fromRow, 9);
+
+      replacePiece(board, move.fromRow, 6, rook);
+      board->squares[move.fromRow][6].hasMoved = true;
+      replacePiece(board, move.fromRow, 9, empty);
+    }
+    else
+    {
+      // Queenside castle
+      Piece rook = getPiece(board, move.fromRow, 0);
+
+      replacePiece(board, move.fromRow, 4, rook);
+      board->squares[move.fromRow][4].hasMoved = true;
+      replacePiece(board, move.fromRow, 0, empty);
+    }
+  }
+
+  // Move the main piece
+  replacePiece(board, move.toRow, move.toCol, movingPiece);
+  board->squares[move.toRow][move.toCol].hasMoved = true;
+
+  replacePiece(board, move.fromRow, move.fromCol, empty);
 
   board->moveCount++;
 }

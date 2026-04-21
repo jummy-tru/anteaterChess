@@ -164,7 +164,7 @@ bool isInCheckAfterMove(Board *board, Move move)
     movingPiece = getPiece(&temp, move.fromRow, move.fromCol);
 
     // Apply the move on the copied board
-    movePiece(&temp, move.fromRow, move.fromCol, move.toRow, move.toCol);
+    applyMove(&temp, move);
 
     // Check if that side's king is in check after the move
     return isInCheck(&temp, movingPiece.color);

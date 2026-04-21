@@ -4,18 +4,6 @@
 #include "rules.h"
 #include <stdlib.h>
 
-Move createMove(int fromRow, int fromCol, int toRow, int toCol)
-{
-  Move move;
-  move.fromRow = fromRow;
-  move.fromCol = fromCol;
-  move.toRow = toRow;
-  move.toCol = toCol;
-  move.isCastling = false;
-  move.isEnPassant = false;
-  return move;
-}
-
 void possibleMoves(Piece *piece, Board *board, int row, int col, MoveList *availableMoves)
 {
   switch (piece->pieceType)
@@ -92,6 +80,8 @@ void possibleSlidingMoves(Piece *piece, Board *board, int row, int col, MoveList
     break;
   case BISHOP:
     isDiagonal = true;
+    break;
+  default:
     break;
   }
 
@@ -347,8 +337,10 @@ void possibleKingMoves(Piece *piece, Board *board, int row, int col, MoveList *a
     if (rook.pieceType == ROOK && !rook.hasMoved)
     {
       // Check if space between King and Rook are empty
-      if (getPiece(board, rookRow, rookCol + 1).pieceType == EMPTY && getPiece(board, rookRow, rookCol + 1).pieceType == EMPTY &&
-          getPiece(board, rookRow, rookCol + 2).pieceType == EMPTY && getPiece(board, rookRow, rookCol + 3).pieceType == EMPTY && getPiece(board, rookRow, rookCol + 4).pieceType == EMPTY)
+      if (getPiece(board, rookRow, rookCol + 1).pieceType == EMPTY &&
+          getPiece(board, rookRow, rookCol + 2).pieceType == EMPTY &&
+          getPiece(board, rookRow, rookCol + 3).pieceType == EMPTY &&
+          getPiece(board, rookRow, rookCol + 4).pieceType == EMPTY)
       {
 
         // We don't have to check the castle move itself for legality,
@@ -417,7 +409,6 @@ void possibleAnteaterMoves(Piece *piece, Board *board, int row, int col, MoveLis
 
       // Check if there is a piece is there
       Piece target = getPiece(board, newRow, newCol);
-      Move move = createMove(row, col, newRow, newCol);
 
       // Add to pseudolegal moves if anteater can take more pawns
       if (target.pieceType == PAWN && target.color != piece->color)

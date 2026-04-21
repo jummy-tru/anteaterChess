@@ -5,7 +5,6 @@
 #include "pieces.h"
 #include "board.h"
 
-Move createMove(int fromRow, int fromCol, int toRow, int toCol);
 void possibleMoves(Piece* piece, Board* board, int row, int col, MoveList* availableMoves);
 
 void possibleSlidingMoves(Piece* piece, Board* board, int row, int col, MoveList* availableMoves);

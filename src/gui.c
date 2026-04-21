@@ -232,40 +232,11 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud)
                 g_board.isAntEating = true;
                 gtk_widget_show(btn_end_turn);
             }
-            if (playedMove.isCastling == true)
-            {
-                // Black queenside castle
-                if (col < g_sel_col && g_board.currentTurn == BLACK)
-                {
-                    movePiece(&g_board, 0, 0, 0, 4);
-                }
-                // White queenside castle
-                if (col < g_sel_col && g_board.currentTurn == WHITE)
-                {
-                    movePiece(&g_board, 7, 0, 7, 4);
-                }
-                // Black kingside castle
-                if (col > g_sel_col && g_board.currentTurn == BLACK)
-                {
-                    movePiece(&g_board, 0, 9, 0, 6);
-                }
-                // White kingside castle
-                if (col > g_sel_col && g_board.currentTurn == WHITE)
-                {
-                    movePiece(&g_board, 7, 9, 7, 6);
-                }
-                setPieceHasMoved(&g_board, row, col, true);
-            }
-            if (playedMove.isEnPassant == true)
-            {
-                removePiece(&g_board, g_sel_row, col);
-            }
+            applyMove(&g_board, playedMove);
+
             if (g_board.isAntEating == false)
             {
-                movePiece(&g_board, g_sel_row, g_sel_col, row, col);
-                setPieceHasMoved(&g_board, row, col, true);
-                g_board.currentTurn =
-                    (g_board.currentTurn == WHITE) ? BLACK : WHITE;
+                g_board.currentTurn = (g_board.currentTurn == WHITE) ? BLACK : WHITE;
                 g_selected = 0;
                 g_hints.index = 0;
                 refresh_all();
@@ -274,8 +245,6 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud)
             }
             else
             {
-                movePiece(&g_board, g_sel_row, g_sel_col, row, col);
-                setPieceHasMoved(&g_board, row, col, true);
                 g_selected = 0;
                 g_hints.index = 0;
                 legalMovesForPiece(&g_board, row, col, &g_hints);
@@ -283,8 +252,7 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud)
                 {
                     g_board.isAntEating = false;
                     gtk_widget_hide(btn_end_turn);
-                    g_board.currentTurn =
-                        (g_board.currentTurn == WHITE) ? BLACK : WHITE;
+                    g_board.currentTurn = (g_board.currentTurn == WHITE) ? BLACK : WHITE;
                 }
                 refresh_all();
                 update_status();
@@ -327,8 +295,7 @@ static void end_turn(GtkButton *b, gpointer d)
     (void)d;
     g_board.isAntEating = false;
     gtk_widget_hide(btn_end_turn);
-    g_board.currentTurn =
-        (g_board.currentTurn == WHITE) ? BLACK : WHITE;
+    g_board.currentTurn = (g_board.currentTurn == WHITE) ? BLACK : WHITE;
     update_status();
     refresh_all();
 }
