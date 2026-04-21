@@ -6,7 +6,10 @@ TARGET  = bin/anteater_chess
 SRC     = src/main.c src/gui.c src/board.c src/moves.c src/rules.c src/clock.c src/controller.c
 OBJ     = $(patsubst src/%.c, bin/%.o, $(SRC))
 
-all: $(TARGET)
+all: dirs $(TARGET)
+
+dirs: 
+	mkdir -p bin pieces
 
 $(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS)
@@ -24,7 +27,8 @@ tar: clean
 	rm -rf Chess_Alpha_src
 
 tar_user: all
-	mkdir -p Chess_Alpha
+	mkdir -p Chess_Alpha/bin
+	cp $(TARGET) Chess_Alpha/bin
 	cp -r README.md COPYRIGHT.md INSTALL.md bin/ doc/ pieces/ Chess_Alpha/
 	tar -czvf Chess_Alpha.tar.gz Chess_Alpha/
 	rm -rf Chess_Alpha
