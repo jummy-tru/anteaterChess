@@ -408,9 +408,9 @@ static void on_play(GtkButton* btn, gpointer user_data) {
     g_player_color = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(md->select_color)) ? WHITE : BLACK;
     g_opponent_type = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(md->select_opp)) ? OPPONENT_HUMAN : OPPONENT_COMPUTER;
 
+    launch_game_window();
     gtk_widget_destroy(md->window);
     g_free(md);
-    launch_game_window();
 }
 
 static void show_menu_window(void) {
@@ -429,7 +429,7 @@ static void show_menu_window(void) {
     gtk_window_set_resizable(GTK_WINDOW(win), FALSE);
     gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
     gtk_container_set_border_width(GTK_CONTAINER(win), 32);
-    g_signal_connect(win, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    gtk_window_set_default_size(GTK_WINDOW(win), 480, -1);
 
     GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(win), vbox);
@@ -465,11 +465,13 @@ static void show_menu_window(void) {
 
 	GtkWidget* select_white = gtk_radio_button_new_with_label(NULL, "White");
 	gtk_widget_set_name(select_white, "menu_button");
+	gtk_widget_set_size_request(select_white, 190, 40);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(select_white), TRUE);
 	gtk_box_pack_start(GTK_BOX(color_box), select_white, TRUE, TRUE, 0);
 
 	GtkWidget* select_black = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(select_white), "Black");
 	gtk_widget_set_name(select_black, "menu_button");
+    gtk_widget_set_size_request(select_black, 190, 40);
 	gtk_box_pack_start(GTK_BOX(color_box), select_black, TRUE, TRUE, 0);
 
 	//opponent
@@ -480,16 +482,19 @@ static void show_menu_window(void) {
 	gtk_box_pack_start(GTK_BOX(vbox), opp_label, FALSE, FALSE, 0);
 
 	GtkWidget* opp_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_size_request(opp_box, 400, -1);
 	gtk_widget_set_margin_bottom(opp_box, 24);
 	gtk_box_pack_start(GTK_BOX(vbox), opp_box, FALSE, FALSE, 0);
 
 	GtkWidget* select_human = gtk_radio_button_new_with_label(NULL, "Human");
 	gtk_widget_set_name(select_human, "menu_button");
+    gtk_widget_set_size_request(select_human, 190, 40);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(select_human), TRUE);
 	gtk_box_pack_start(GTK_BOX(opp_box), select_human, TRUE, TRUE, 0);
 
 	GtkWidget* select_computer = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(select_human), "Computer");
 	gtk_widget_set_name(select_computer, "menu_button");
+    gtk_widget_set_size_request(select_computer, 190, 40);
 	gtk_box_pack_start(GTK_BOX(opp_box), select_computer, TRUE, TRUE, 0);
 
     //seperator
