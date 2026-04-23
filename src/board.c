@@ -226,7 +226,7 @@ int loadBoardFromFEN(Board *board, const char *fen)
 void setupBoard(Board *board)
 {
   // String Representing the starting state
-  const char *startingFEN = "rnbaqkanbr/pppppppppp/10/10/10/10/PPPPPPPPPP/RNBAQKANBR";
+  const char *startingFEN = "rnbaqkabnr/pppppppppp/10/10/10/10/PPPPPPPPPP/RNBAQKABNR";
 
   loadBoardFromFEN(board, startingFEN);
   board->currentTurn = WHITE;
