@@ -9,6 +9,7 @@
 #include "rules.h"
 
 #define SQ 80
+#define WARNING_SECONDS 60
 
 //oponent type and color selection
 typedef enum { OPPONENT_HUMAN, OPPONENT_COMPUTER } OpponentType;
@@ -90,6 +91,12 @@ typedef struct
 static Cell g_cells[ROWS][COLS];
 static GtkWidget *g_status_label = NULL;
 static GtkWidget *btn_end_turn = NULL;
+static GtkWidget* g_timer_label = NULL;
+
+static guint g_timer_id = 0;
+static int g_elapsed_seconds = 0;
+static int g_warning_shown = 0;
+
 
 static void set_highlight(int r, int c, int highlighted)
 {
@@ -172,17 +179,71 @@ static void refresh_all(void)
     }
 }
 
+static void refresh_timer(void) {
+	if (!g_timer_label) return;
+
+    int minutes = g_elapsed_seconds / 60;
+    int seconds = g_elapsed_seconds % 60;
+    char buf[32];
+    snprintf(buf, sizeof buf, "Time: %02d:%02d", minutes, seconds);
+	gtk_label_set_text(GTK_LABEL(g_timer_label), buf);
+}
+
+static void stop_timer(void) {
+    if(g_timer_id != 0) {
+        g_source_remove(g_timer_id);
+        g_timer_id = 0;
+	}
+}
+
+
 static void update_status(void)
 {
     Color c = g_board.currentTurn;
+
     if (isCheckmate(&g_board, c))
         gtk_label_set_text(GTK_LABEL(g_status_label),
                            c == WHITE ? "Checkmate! Black wins!" : "Checkmate! White wins!");
     else if (isStalemate(&g_board, c))
         gtk_label_set_text(GTK_LABEL(g_status_label), "Stalemate! Draw.");
+	else if (g_elapsed_seconds >= WARNING_SECONDS)
+    {
+        gtk_label_set_text(GTK_LABEL(g_status_label),
+                           c == WHITE ? "White to move. Warning: Time is over 1:00" : "Black to move. Warning: Time is over 1:00");
+        g_warning_shown = 1;
+    }
     else
         gtk_label_set_text(GTK_LABEL(g_status_label),
                            c == WHITE ? "White to move." : "Black to move.");
+}
+
+static gboolean on_timer_tick(gpointer data) {
+    (void)data;
+
+	g_elapsed_seconds++;
+	refresh_timer();
+
+    if(!g_warning_shown && g_elapsed_seconds >= WARNING_SECONDS) {
+		g_warning_shown = 1;
+        update_status();
+	}
+
+	return TRUE; // Continue calling the timer
+}
+
+static void start_timer(void) {
+    stop_timer(); // Ensure any existing timer is stopped
+    g_elapsed_seconds = 0;
+    g_warning_shown = 0;
+    refresh_timer();
+    g_timer_id = g_timeout_add_seconds(1, on_timer_tick, NULL);
+
+	update_status();
+}
+
+static void switch_turn(void) {
+    g_board.currentTurn = (g_board.currentTurn == WHITE) ? BLACK : WHITE;
+    start_timer();
 }
 
 static int is_legal_target(int r, int c)
@@ -241,11 +302,9 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud)
 
             if (g_board.isAntEating == false)
             {
-                g_board.currentTurn = (g_board.currentTurn == WHITE) ? BLACK : WHITE;
+				switch_turn();
                 g_selected = 0;
                 g_hints.index = 0;
-                refresh_all();
-                update_status();
                 refresh_all();
             }
             else
@@ -257,10 +316,8 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud)
                 {
                     g_board.isAntEating = false;
                     gtk_widget_hide(btn_end_turn);
-                    g_board.currentTurn = (g_board.currentTurn == WHITE) ? BLACK : WHITE;
+					switch_turn();
                 }
-                refresh_all();
-                update_status();
                 refresh_all();
             }
         }
@@ -288,6 +345,7 @@ static void on_new_game(GtkButton *b, gpointer d)
     (void)b;
     (void)d;
     setupBoard(&g_board);
+	start_timer();
     g_selected = 0;
     g_hints.index = 0;
     refresh_all();
@@ -300,8 +358,7 @@ static void end_turn(GtkButton *b, gpointer d)
     (void)d;
     g_board.isAntEating = false;
     gtk_widget_hide(btn_end_turn);
-    g_board.currentTurn = (g_board.currentTurn == WHITE) ? BLACK : WHITE;
-    update_status();
+	switch_turn();
     refresh_all();
 }
 
@@ -391,6 +448,68 @@ static const char *MENU_CSS =
     "}"
     "#menu_quit:hover {"
     "  color: #4a6a80;"
+    "}"
+    
+    //in game window
+    "#game_window{"
+    "  background-color: #efefef;"
+    "}"
+    
+    //in game side box
+    "#game_side_box {"
+    "  background-color: #252c34;"
+    "  border: 1px solid #2a3540;"
+    "  border-radius: 12px;"
+    "}"
+
+    //side box labels
+    "#game_side_label {"
+    "  color: #5b9cf0;"
+    "  font-size: 10px;"
+    "  font-weight: bold;"
+    "  letter-spacing: 3px;"
+    "}"
+
+    //box for clock and status
+    "#side_box {"
+    "  background-color: #1e2228;"
+    "  border: 1px solid #2d6a9f;"
+    "  border-radius: 8px;"
+    "  padding: 18px;"
+    "}"
+    "#side_box > border {"
+    "  border: none;"
+    "}"
+
+    //clock text
+    "#clock_text {"
+    "  color: #dce3ec;"
+    "  font-size: 28px;"
+    "  font-weight: bold;"
+    "}"
+
+    //status text
+    "#status_text {"
+    "  color: #dce3ec;"
+    "  font-size: 15px;"
+    "  font-weight: bold;"
+    "}"
+
+    //sidebar buttons
+    "#game_side_button {"
+    "  background-color: #1a3650;"
+    "  color: #7ab8e8;"
+    "  border-radius: 8px;"
+    "  border: 1px solid #2d6a9f;"
+    "  padding: 12px 14px;"
+    "  font-size: 13px;"
+    "  font-weight: bold;"
+    "  letter-spacing: 2px;"
+    "}"
+
+    "#game_side_button:hover {"
+    "  background-color: #1f4a75;"
+    "  border-color: #3d8abf;"
     "}";
 
 static void launch_game_window(void);
@@ -411,6 +530,13 @@ static void on_play(GtkButton* btn, gpointer user_data) {
     launch_game_window();
     gtk_widget_destroy(md->window);
     g_free(md);
+}
+
+static void on_app_quit(GtkButton *w, gpointer d) {
+    (void)w;
+    (void)d;
+	stop_timer();
+    gtk_main_quit();
 }
 
 static void show_menu_window(void) {
@@ -516,7 +642,7 @@ static void show_menu_window(void) {
 	gtk_widget_set_halign(quit_btn, GTK_ALIGN_CENTER);
 	gtk_box_pack_start(GTK_BOX(vbox), quit_btn, FALSE, FALSE, 0);
 
-	g_signal_connect(quit_btn, "clicked", G_CALLBACK(gtk_main_quit), NULL);
+	g_signal_connect(quit_btn, "clicked", G_CALLBACK(on_app_quit), NULL);
 
 	MenuData* md = g_new(MenuData, 1);
 	md->window = win;
@@ -536,15 +662,25 @@ static void launch_game_window(void) {
     gtk_window_set_title(GTK_WINDOW(win), "Anteater Chess");
     gtk_window_set_resizable(GTK_WINDOW(win), FALSE);
     gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
-    g_signal_connect(win, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    g_signal_connect(win, "destroy", G_CALLBACK(on_app_quit), NULL);
 
-    GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
-    gtk_container_set_border_width(GTK_CONTAINER(vbox), 8);
-    gtk_container_add(GTK_CONTAINER(win), vbox);
+    //screen layout
+	GtkWidget* layout = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 18);
+	gtk_container_set_border_width(GTK_CONTAINER(layout), 12);
+	gtk_container_add(GTK_CONTAINER(win), layout);
+
+    //left panel for board
+	GtkWidget* board_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+	gtk_box_pack_start(GTK_BOX(layout), board_box, FALSE, FALSE, 0);
+
+	//right panel for side bar
+	GtkWidget* side_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	gtk_widget_set_size_request(side_box, 260, -1);
+	gtk_box_pack_start(GTK_BOX(layout), side_box, FALSE, FALSE, 0);
     
     // board row
     GtkWidget* board_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
-    gtk_box_pack_start(GTK_BOX(vbox), board_row, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(board_box), board_row, FALSE, FALSE, 0);
 
     // rank labels
     GtkWidget* rank_col = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -607,7 +743,7 @@ static void launch_game_window(void) {
 
     // file labels
     GtkWidget* file_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_start(GTK_BOX(vbox), file_row, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(board_box), file_row, FALSE, FALSE, 0);
     GtkWidget* spacer = gtk_label_new("");
     gtk_widget_set_size_request(spacer, 28, 16);
     gtk_box_pack_start(GTK_BOX(file_row), spacer, FALSE, FALSE, 0);
@@ -620,26 +756,72 @@ static void launch_game_window(void) {
         gtk_box_pack_start(GTK_BOX(file_row), lbl, FALSE, FALSE, 0);
     }
 
+    //side box frame
+	GtkWidget* side_frame = gtk_frame_new(NULL);
+	gtk_widget_set_name(side_frame, "game_side_box");
+	gtk_box_pack_start(GTK_BOX(side_box), side_frame, FALSE, FALSE, 0);
+
+	GtkWidget* side_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 14);
+	gtk_container_set_border_width(GTK_CONTAINER(side_vbox), 18);
+	gtk_container_add(GTK_CONTAINER(side_frame), side_vbox);
+
+    //turn clock
+	GtkWidget* clock_label = gtk_label_new("TURN CLOCK");
+	gtk_widget_set_name(clock_label, "game_side_label");
+	gtk_label_set_xalign(GTK_LABEL(clock_label), 0.5);
+	gtk_box_pack_start(GTK_BOX(side_vbox), clock_label, FALSE, FALSE, 4);
+
+	GtkWidget* clock_box = gtk_frame_new(NULL);
+	gtk_widget_set_name(clock_box, "side_box");
+	gtk_box_pack_start(GTK_BOX(side_vbox), clock_box, FALSE, FALSE, 0);
+
+	g_timer_label = gtk_label_new("Time: 00:00");
+	gtk_widget_set_name(g_timer_label, "clock_text");
+	gtk_container_add(GTK_CONTAINER(clock_box), g_timer_label);
+
+	GtkWidget* sep2 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+	gtk_box_pack_start(GTK_BOX(side_vbox), sep2, FALSE, FALSE, 8);
+
+    //side box buttons
+	GtkWidget* side_btn = gtk_button_new_with_label("NEW GAME");
+	gtk_widget_set_name(side_btn, "game_side_button");
+
+	btn_end_turn = gtk_button_new_with_label("END TURN");
+	gtk_widget_set_name(btn_end_turn, "game_side_button");
+
+	GtkWidget* quit_btn = gtk_button_new_with_label("QUIT");
+	gtk_widget_set_name(quit_btn, "game_side_button");
+
+    g_signal_connect(side_btn, "clicked", G_CALLBACK(on_new_game), NULL);
+    g_signal_connect(btn_end_turn, "clicked", G_CALLBACK(end_turn), NULL);
+    g_signal_connect(quit_btn, "clicked", G_CALLBACK(on_app_quit), NULL);
+
+    gtk_box_pack_start(GTK_BOX(side_vbox), side_btn, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(side_vbox), btn_end_turn, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(side_vbox), quit_btn, FALSE, FALSE, 0);
+
+	GtkWidget* sep3 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+	gtk_box_pack_start(GTK_BOX(side_vbox), sep3, FALSE, FALSE, 8);
+
+	//side box status
+	GtkWidget* status_label = gtk_label_new("STATUS");
+	gtk_widget_set_name(status_label, "game_side_label");
+	gtk_label_set_xalign(GTK_LABEL(status_label), 0.5);
+	gtk_box_pack_start(GTK_BOX(side_vbox), status_label, FALSE, FALSE, 2);
+
+	GtkWidget* status_box = gtk_frame_new(NULL);
+	gtk_widget_set_name(status_box, "side_box");
+    gtk_box_pack_start(GTK_BOX(side_vbox), status_box, FALSE, FALSE, 0);
+
     // status
     g_status_label = gtk_label_new("White to move.");
-    gtk_label_set_xalign(GTK_LABEL(g_status_label), 0.0);
-    gtk_box_pack_start(GTK_BOX(vbox), g_status_label, FALSE, FALSE, 2);
-
-    // buttons
-    GtkWidget* btn_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_box_pack_start(GTK_BOX(vbox), btn_row, FALSE, FALSE, 4);
-
-    GtkWidget* btn_new = gtk_button_new_with_label("New Game");
-    GtkWidget* btn_quit = gtk_button_new_with_label("Quit");
-    btn_end_turn = gtk_button_new_with_label("End Turn");
-    g_signal_connect(btn_new, "clicked", G_CALLBACK(on_new_game), NULL);
-    g_signal_connect(btn_quit, "clicked", G_CALLBACK(gtk_main_quit), NULL);
-    g_signal_connect(btn_end_turn, "clicked", G_CALLBACK(end_turn), NULL);
-    gtk_box_pack_start(GTK_BOX(btn_row), btn_new, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(btn_row), btn_quit, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(btn_row), btn_end_turn, FALSE, FALSE, 0);
+	gtk_widget_set_name(g_status_label, "status_text");
+	gtk_widget_set_halign(g_status_label, GTK_ALIGN_CENTER);
+	gtk_widget_set_valign(g_status_label, GTK_ALIGN_CENTER);
+	gtk_container_add(GTK_CONTAINER(status_box), g_status_label);
 
     refresh_all();
+    start_timer();
     gtk_widget_show_all(win);
     gtk_widget_hide(btn_end_turn);
 }
