@@ -196,6 +196,49 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud) {
     return TRUE;
 }
 
+static void show_rules_window(GtkButton *b, gpointer d)
+{
+    (void)b; 
+    (void)d;
+
+    GtkWidget *rules_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(rules_win), "How to Play / Rules");
+    gtk_window_set_default_size(GTK_WINDOW(rules_win), 500, 400);
+    gtk_window_set_resizable(GTK_WINDOW(rules_win), FALSE);
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(box), 12);
+    gtk_container_add(GTK_CONTAINER(rules_win), box);
+
+    GtkWidget *title = gtk_label_new("How to Play Anteater Chess");
+    gtk_box_pack_start(GTK_BOX(box), title, FALSE, FALSE, 5);
+
+    GtkWidget *rules_label = gtk_label_new(
+        "Rules:\n\n"
+        "1. The game is played on an 8 x 10 board.\n"
+        "2. White moves first.\n"
+        "3. Standard chess pieces move like normal chess.\n"
+        "4. The goal is to checkmate the opponent's king.\n"
+        "5. The Anteater is a special piece.\n"
+        "6. The Anteater moves like a king, one square in any direction.\n"
+        "7. The Anteater can only capture pawns.\n"
+        "8. If the Anteater captures a pawn, it may continue capturing nearby pawns.\n"
+        "9. Click a piece to select it, then click a legal square to move.\n"
+        "10. Use New Game to restart or Quit to exit."
+    );
+
+    gtk_label_set_line_wrap(GTK_LABEL(rules_label), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(rules_label), 0.0);
+    gtk_box_pack_start(GTK_BOX(box), rules_label, TRUE, TRUE, 5);
+
+    GtkWidget *close_btn = gtk_button_new_with_label("Close");
+    g_signal_connect_swapped(close_btn, "clicked", 
+                             G_CALLBACK(gtk_widget_destroy), rules_win);
+    gtk_box_pack_start(GTK_BOX(box), close_btn, FALSE, FALSE, 5);
+
+    gtk_widget_show_all(rules_win);
+}
+
 static void on_new_game(GtkButton *b, gpointer d)
 {
     (void)b; (void)d;
@@ -304,11 +347,14 @@ int run_gui(int argc, char *argv[])
     GtkWidget *btn_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_box_pack_start(GTK_BOX(vbox), btn_row, FALSE, FALSE, 4);
  
-    GtkWidget *btn_new  = gtk_button_new_with_label("New Game");
+    GtkWidget *btn_new  = gtk_button_new_with_label("");
+    GtkWidget *btn_rules = gtk_button_new_with_label("How to Play / Rules");
     GtkWidget *btn_quit = gtk_button_new_with_label("Quit");
     g_signal_connect(btn_new,  "clicked", G_CALLBACK(on_new_game),   NULL);
+    g_signal_connect(btn_rules, "clicked", G_CALLBACK(show_rules_window),  NULL);
     g_signal_connect(btn_quit, "clicked", G_CALLBACK(gtk_main_quit), NULL);
     gtk_box_pack_start(GTK_BOX(btn_row), btn_new,  FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(btn_row), btn_rules, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(btn_row), btn_quit, FALSE, FALSE, 0);
  
     refresh_all();
