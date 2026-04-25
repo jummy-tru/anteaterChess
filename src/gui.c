@@ -580,6 +580,49 @@ static void on_app_quit(GtkButton *w, gpointer d) {
     gtk_main_quit();
 }
 
+static void show_rules_window(GtkButton *btn, gpointer data)
+{
+    (void)btn;
+    (void)data;
+
+    GtkWidget *rules_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(rules_win), "How to Play / Rules");
+    gtk_window_set_default_size(GTK_WINDOW(rules_win), 500, 400);
+    gtk_window_set_resizable(GTK_WINDOW(rules_win), FALSE);
+    gtk_window_set_position(GTK_WINDOW(rules_win), GTK_WIN_POS_CENTER);
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(box), 16);
+    gtk_container_add(GTK_CONTAINER(rules_win), box);
+
+    GtkWidget *title = gtk_label_new("HOW TO PLAY ANTEATER CHESS");
+    gtk_box_pack_start(GTK_BOX(box), title, FALSE, FALSE, 5);
+
+    GtkWidget *rules_label = gtk_label_new(
+        "1. Anteater Chess is played on an 8 x 10 board.\n"
+        "2. White moves first.\n"
+        "3. Standard chess pieces move like regular chess.\n"
+        "4. The goal is to checkmate the opponent's king.\n"
+        "5. The Anteater is a special piece.\n"
+        "6. The Anteater moves one square in any direction.\n"
+        "7. The Anteater can only capture pawns.\n"
+        "8. After capturing a pawn, the Anteater may continue capturing nearby pawns.\n"
+        "9. Click a piece to select it, then click a highlighted square to move.\n"
+        "10. Use END TURN after the Anteater is done capturing."
+    );
+
+    gtk_label_set_line_wrap(GTK_LABEL(rules_label), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(rules_label), 0.0);
+    gtk_box_pack_start(GTK_BOX(box), rules_label, TRUE, TRUE, 5);
+
+    GtkWidget *close_btn = gtk_button_new_with_label("Close");
+    g_signal_connect_swapped(close_btn, "clicked",
+                             G_CALLBACK(gtk_widget_destroy), rules_win);
+    gtk_box_pack_start(GTK_BOX(box), close_btn, FALSE, FALSE, 5);
+
+    gtk_widget_show_all(rules_win);
+}
+
 static void show_menu_window(void) {
     GtkCssProvider* css = gtk_css_provider_new();
     gtk_css_provider_load_from_data(css, MENU_CSS, -1, NULL);
@@ -676,6 +719,12 @@ static void show_menu_window(void) {
 	gtk_widget_set_margin_bottom(play_btn, 10);
 	gtk_box_pack_start(GTK_BOX(vbox), play_btn, FALSE, FALSE, 0);
 
+	//rules button
+	GtkWidget* rules_btn = gtk_button_new_with_label("HOW TO PLAY / RULES");
+	gtk_widget_set_name(rules_btn, "menu_play");
+	gtk_widget_set_margin_bottom(rules_btn, 10);
+	gtk_box_pack_start(GTK_BOX(vbox), rules_btn, FALSE, FALSE, 0);
+
     //quit button
 	GtkWidget* quit_btn = gtk_button_new_with_label("Quit");
 	gtk_widget_set_name(quit_btn, "menu_quit");
@@ -684,6 +733,8 @@ static void show_menu_window(void) {
 	gtk_box_pack_start(GTK_BOX(vbox), quit_btn, FALSE, FALSE, 0);
 
 	g_signal_connect(quit_btn, "clicked", G_CALLBACK(on_app_quit), NULL);
+	
+	g_signal_connect(rules_btn, "clicked", G_CALLBACK(show_rules_window), NULL);
 
 	MenuData* md = g_new(MenuData, 1);
 	md->window = win;
