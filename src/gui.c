@@ -16,6 +16,7 @@ typedef enum { OPPONENT_HUMAN, OPPONENT_COMPUTER } OpponentType;
 
 static Color g_player_color = WHITE;
 static OpponentType g_opponent_type = OPPONENT_HUMAN;
+static GtkWidget *g_history_text = NULL;
 
 static const char *piece_image(Piece p)
 {
@@ -264,6 +265,37 @@ static Move get_played_move(int r, int c)
     return createMove(-1, -1, -1, -1);
 }
 
+static void log_move_to_sidebar(Piece p, int fromR, int fromC, int toR, int toC) {
+    if (!g_history_text) return;
+
+    char move_str[64];
+    char colorChar = (p.color == WHITE) ? 'w' : 'b';
+    char typeChar;
+
+    switch(p.pieceType) {
+        case PAWN:     typeChar = 'P'; break;
+        case ROOK:     typeChar = 'R'; break;
+        case KNIGHT:   typeChar = 'N'; break;
+        case BISHOP:   typeChar = 'B'; break;
+        case QUEEN:    typeChar = 'Q'; break;
+        case KING:     typeChar = 'K'; break;
+        case ANTEATER: typeChar = 'A'; break;
+        default:       typeChar = '?';
+    }
+
+    snprintf(move_str, sizeof(move_str), "%d. %c%c: %c%d -> %c%d\n",
+             g_board.moveCount, colorChar, typeChar,
+             colToFile(fromC), rowToRank(fromR),
+             colToFile(toC), rowToRank(toC));
+
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(g_history_text));
+    GtkTextIter end;
+    gtk_text_buffer_get_end_iter(buffer, &end);
+    gtk_text_buffer_insert(buffer, &end, move_str, -1);
+
+    gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(g_history_text), &end, 0.0, FALSE, 0, 0);
+}
+
 static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud)
 {
     (void)w;
@@ -292,7 +324,9 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud)
         {
             Move playedMove = get_played_move(row, col);
             Piece selected = getPiece(&g_board, g_sel_row, g_sel_col);
+            log_move_to_sidebar(selected, g_sel_row, g_sel_col, row, col);
             Piece target = getPiece(&g_board, row, col);
+            
             if (selected.pieceType == ANTEATER && target.pieceType == PAWN)
             {
                 g_board.isAntEating = true;
@@ -510,6 +544,13 @@ static const char *MENU_CSS =
     "#game_side_button:hover {"
     "  background-color: #1f4a75;"
     "  border-color: #3d8abf;"
+    "}"
+    
+    "#history_view {"
+    "  background-color: #1e2228;"
+    "  color: #7ab8e8;"
+    "  font-family: monospace;"
+    "  font-size: 12px;"
     "}";
 
 static void launch_game_window(void);
@@ -802,6 +843,25 @@ static void launch_game_window(void) {
 
 	GtkWidget* sep3 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
 	gtk_box_pack_start(GTK_BOX(side_vbox), sep3, FALSE, FALSE, 8);
+
+    // Move History Label
+    GtkWidget* history_label = gtk_label_new("MOVE HISTORY");
+    gtk_widget_set_name(history_label, "game_side_label");
+    gtk_box_pack_start(GTK_BOX(side_vbox), history_label, FALSE, FALSE, 2);
+
+    // Scrollable container for the text
+    GtkWidget* scroll_win = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_win), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_size_request(scroll_win, -1, 150); // Give it some height
+    gtk_box_pack_start(GTK_BOX(side_vbox), scroll_win, TRUE, TRUE, 0);
+
+    g_history_text = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(g_history_text), FALSE);
+    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(g_history_text), FALSE);
+    gtk_text_view_set_left_margin(GTK_TEXT_VIEW(g_history_text), 10);
+    gtk_widget_set_name(g_history_text, "history_view"); // For CSS styling
+
+    gtk_container_add(GTK_CONTAINER(scroll_win), g_history_text);
 
 	//side box status
 	GtkWidget* status_label = gtk_label_new("STATUS");
