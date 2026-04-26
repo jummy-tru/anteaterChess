@@ -3,9 +3,11 @@
 #include "pieces.h"
 #include "board.h"
 #include "moves.h"
+#include "rules.h"
 #include "controller.h"
 
-int scanBoard(Board* board);
-int searchMoves(Board* board, int depth, bool isMax);
-Move bestMove(Board* board,int depth);
+int evalBoard(Board* board);
+Move getBotMove(Board * board);
+int minimax();
+
 #endif
