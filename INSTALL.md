@@ -4,10 +4,10 @@
 
 Use `tar -xvzf Chess_Alpha.tar.gz`, then `cd Chess_Alpha`. \
 \
-To run the application, use `./bin/Anteater_Chess.exe`
+To run the application, use `./bin/anteater_chess`
 
 ## For Source Code
 
 First, use `tar -xvzf Chess_Alpha_src.tar.gz`, then `cd Chess_Alpha_src`, then `make` \
 \
-To run the application, use `./bin/Anteater_Chess.exe`
+To run the application, use `./bin/anteater_chess`
