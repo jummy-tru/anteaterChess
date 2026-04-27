@@ -8,8 +8,8 @@ Ben Choi, Hamza Vaid, Giovanna Dunker Estruquel, Jim Truong, Shogo Stuck, Matthe
 
 ## Version
 
-Alpha release 0.1 \
-Published April 19th, 2026
+Final release 1.0 \
+Published April 27th, 2026
 
 ## Instructions
 

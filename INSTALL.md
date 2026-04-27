@@ -2,7 +2,7 @@
 
 ## For Users
 
-Use `tar -xvzf Chess_Alpha_src.tar.gz`, then `cd Chess_Alpha`. \
+Use `tar -xvzf Chess_Alpha.tar.gz`, then `cd Chess_Alpha`. \
 \
 To run the application, use `./bin/Anteater_Chess.exe`
 
