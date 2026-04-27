@@ -247,6 +247,14 @@ void log_move_to_sidebar(Piece p, int fromR, int fromC, int toR, int toC) {
              colToFile(fromC), rowToRank(fromR),
              colToFile(toC), rowToRank(toR));
 
+    // Write to physical file
+    FILE *f = fopen("gamelog.txt", "a"); // Append mode
+    if (f != NULL) {
+        fprintf(f, "%s", move_str);
+        fclose(f);
+    }
+
+
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(g_history_text));
     GtkTextIter end;
     gtk_text_buffer_get_end_iter(buffer, &end);
@@ -288,8 +296,23 @@ static void on_new_game(GtkButton *b, gpointer d)
 {
     (void)b;
     (void)d;
+
+    // Wipe the log file and write a fresh header
+    FILE *f = fopen("gamelog.txt", "w"); // Write mode truncates the file
+    if (f != NULL) {
+        fprintf(f, "--- New Game Started ---\n");
+        fclose(f);
+    }
+
+    // Clear the UI history
+    if (g_history_text) {
+        GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(g_history_text));
+        gtk_text_buffer_set_text(buffer, "", -1);
+    }
+
+    // Re-initialize the game state
     init_game(controller);
-	start_timer();
+    start_timer();
     refresh_all();
     update_status();
 }
