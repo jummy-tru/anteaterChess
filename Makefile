@@ -19,9 +19,10 @@ bin/%.o: src/%.c
 
 clean:
 	rm -f $(OBJ) $(TARGET)
+	rm -f src/*.o src/*.out
 
 tar: clean
-	mkdir -p Chess_Alpha_src
+	mkdir -p Chess_Alpha_src/bin
 	cp -r README.md COPYRIGHT.md INSTALL.md Makefile bin/ doc/ src/ pieces/ Chess_Alpha_src/
 	tar -czvf Chess_Alpha_src.tar.gz Chess_Alpha_src/
 	rm -rf Chess_Alpha_src
