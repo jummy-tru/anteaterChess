@@ -521,27 +521,40 @@ static void on_app_quit(GtkButton *w, gpointer d) {
     gtk_main_quit();
 }
 
-static PieceType show_promotion_popup(Color color){
-char col_char = (color == WHITE) ? 'w' : 'b';
+PieceType show_promotion_popup(Color color)
+{
+    char col_char = (color == WHITE) ? 'w' : 'b';
     const char *prefixes[] = { "Q", "R", "B", "N", "A" };
     PieceType types[]      = { QUEEN, ROOK, BISHOP, KNIGHT, ANTEATER };
     const char *names[]    = { "Queen", "Rook", "Bishop", "Knight", "Anteater" };
+
+    // Get the main window using one of our global GUI cells as a reference
+    GtkWidget *main_window = gtk_widget_get_toplevel(g_cells[0][0].event_box);
  
-    GtkWidget *dialog = gtk_dialog_new_with_buttons( "Pawn Promotion", NULL, GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, NULL);
+    GtkWidget *dialog = gtk_dialog_new_with_buttons("Pawn Promotion", 
+                        GTK_WINDOW(main_window), 
+                        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, 
+                        NULL, NULL);
+
     gtk_window_set_resizable(GTK_WINDOW(dialog), FALSE);
-    gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
+    gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER_ON_PARENT);
  
     GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
  
+
     GtkWidget *label = gtk_label_new("Choose a piece to promote to:");
-    gtk_widget_set_margin_top(label, 10);
-    gtk_widget_set_margin_bottom(label, 10);
+    gtk_widget_set_margin_top(label, 15);
+    gtk_widget_set_margin_bottom(label, 5);
+    gtk_widget_set_margin_start(label, 15);
+    gtk_widget_set_margin_end(label, 15);
     gtk_box_pack_start(GTK_BOX(content), label, FALSE, FALSE, 0);
  
+    // Set up the button box
     GtkWidget *btn_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_widget_set_margin_start(btn_box, 10);
-    gtk_widget_set_margin_end(btn_box, 10);
-    gtk_widget_set_margin_bottom(btn_box, 10);
+    gtk_widget_set_margin_top(btn_box, 10);
+    gtk_widget_set_margin_bottom(btn_box, 15);
+    gtk_widget_set_margin_start(btn_box, 15);
+    gtk_widget_set_margin_end(btn_box, 15);
     gtk_box_pack_start(GTK_BOX(content), btn_box, FALSE, FALSE, 0);
  
     for (int i = 0; i < 5; i++)
@@ -553,16 +566,26 @@ char col_char = (color == WHITE) ? 'w' : 'b';
         GtkWidget *btn = gtk_button_new();
         gtk_button_set_image(GTK_BUTTON(btn), img);
         gtk_widget_set_tooltip_text(btn, names[i]);
+        
         gtk_widget_set_size_request(btn, SQ, SQ);
+        
         gtk_dialog_add_action_widget(GTK_DIALOG(dialog), btn, (gint)types[i]);
     }
  
     gtk_widget_show_all(dialog);
+    
+    // Run the dialog loop; it blocks until a button is clicked or window closed
     gint result = gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
  
+    // If the user picked a valid piece, return it
     if (result == QUEEN || result == ROOK || result == BISHOP || result == KNIGHT || result == ANTEATER)
+    {
         return (PieceType)result;
+    }
+    
+    //Default to Queen if the window is closed unexpectedly
+    return QUEEN;
 }
 
 static void show_rules_window(GtkButton *btn, gpointer data)

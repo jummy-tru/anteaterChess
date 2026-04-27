@@ -61,6 +61,13 @@ bool process_cell_click(GameController *controller, int row, int col)
       int fromR = get_selected_row(controller);
       int fromC = get_selected_col(controller);
       
+      // Promotion Logic 
+      if (playedMove.isPromotion) 
+      {
+        // Call GUI popup and save the choice into the move struct
+        playedMove.promoteTo = show_promotion_popup(get_current_turn(controller));
+      }
+
       applyMove(&controller->board, playedMove);
 
       Piece finalPiece = controller_get_piece_at(controller, row, col);
