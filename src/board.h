@@ -40,7 +40,7 @@ char colToFile(int col);
 
 void setPieceHasMoved(Board *board, int row, int col, bool hasMoved);
 void emptyBoard(Board *board);
-void setupBoard(Board *board, Color first_turn);
+void setupBoard(Board *board);
 int loadBoardFromFEN(Board *board, const char *fen);
 Piece getPiece(Board *board, int row, int column);
 void movePiece(Board *board, int fromRow, int fromColumn, int toRow, int toColumn);

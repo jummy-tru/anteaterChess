@@ -9,16 +9,30 @@
 #include "rules.h"
 #include "controller.h"
 #include "clock.h"
+#include "gui.h"
+#include "main_funct.h"
 
 #define SQ 80
 
-// opponent type and color selection
-typedef enum { OPPONENT_HUMAN, OPPONENT_COMPUTER } OpponentType;
-
-static GameController controller;
-static Color g_player_color = WHITE;
-static OpponentType g_opponent_type = OPPONENT_HUMAN;
+static GameController *controller = NULL;
+static Color *g_player_color = NULL;
+static OpponentType *g_opponent_type = NULL;
 static GtkWidget *g_history_text = NULL;
+
+void set_controller(GameController *c)
+{
+    controller = c;
+}
+
+void set_opponent_type(OpponentType *opponent)
+{
+    g_opponent_type = opponent;
+}
+
+void set_player_color(Color *player_color)
+{
+    g_player_color = player_color;
+}
 
 static const char *piece_image(Piece p)
 {
@@ -87,7 +101,6 @@ static GtkWidget *btn_end_turn = NULL;
 static GtkWidget* g_timer_label = NULL;
 static guint g_timer_id = 0;
 
-
 static void set_highlight(int r, int c, int highlighted)
 {
     if (highlighted)
@@ -115,7 +128,7 @@ static void set_hint(int r, int c, int show_hint)
 
 static void refresh_cell(int r, int c)
 {
-    Piece p = controller_get_piece_at(&controller, r, c);
+    Piece p = controller_get_piece_at(controller, r, c);
     const char *img = piece_image(p);
     if (img)
     {
@@ -136,7 +149,7 @@ static void refresh_all(void)
 
             refresh_cell(r, c);
 
-            if (is_square_selected(&controller) && is_hint_square(&controller, r, c))
+            if (is_square_selected(controller) && is_hint_square(controller, r, c))
             {
                 set_hint(r, c, 1);
             }
@@ -145,7 +158,7 @@ static void refresh_all(void)
                 set_hint(r, c, 0);
             }
 
-            if (is_square_selected(&controller) && r == get_selected_row(&controller) && c == get_selected_col(&controller))
+            if (is_square_selected(controller) && r == get_selected_row(controller) && c == get_selected_col(controller))
             {
                 set_highlight(r, c, 1);
             }
@@ -160,8 +173,8 @@ static void refresh_all(void)
 static void refresh_timer(void) {
 	if (!g_timer_label) return;
 
-    int minutes = controller_get_time_elapsed(&controller) / 60;
-    int seconds = controller_get_time_elapsed(&controller) % 60;
+    int minutes = controller_get_time_elapsed(controller) / 60;
+    int seconds = controller_get_time_elapsed(controller) % 60;
     char buf[32];
     snprintf(buf, sizeof buf, "Time: %02d:%02d", minutes, seconds);
 	gtk_label_set_text(GTK_LABEL(g_timer_label), buf);
@@ -177,13 +190,13 @@ static void stop_timer(void) {
 
 static void update_status(void)
 {
-    Color c = get_current_turn(&controller);
-    if (controller_in_checkmate(&controller))
+    Color c = get_current_turn(controller);
+    if (controller_in_checkmate(controller))
         gtk_label_set_text(GTK_LABEL(g_status_label),
                            c == WHITE ? "Checkmate! Black wins!" : "Checkmate! White wins!");
-    else if (controller_in_stalemate(&controller))
+    else if (controller_in_stalemate(controller))
         gtk_label_set_text(GTK_LABEL(g_status_label), "Stalemate! Draw.");
-	else if (controller_get_warning_status(&controller))
+	else if (controller_get_warning_status(controller))
     {
         gtk_label_set_text(GTK_LABEL(g_status_label),
                            c == WHITE ? "White to move. Warning: Time is over 1:00" : "Black to move. Warning: Time is over 1:00");
@@ -196,7 +209,7 @@ static void update_status(void)
 static gboolean on_timer_tick(gpointer data) {
     (void)data;
 
-    controller_increment_timer(&controller);
+    controller_increment_timer(controller);
 	refresh_timer();
     update_status();
 
@@ -230,7 +243,7 @@ void log_move_to_sidebar(Piece p, int fromR, int fromC, int toR, int toC) {
     }
 
     snprintf(move_str, sizeof(move_str), "%d. %c%c: %c%d -> %c%d\n",
-             controller_get_move_count(&controller) + 1, colorChar, typeChar,
+             controller_get_move_count(controller) + 1, colorChar, typeChar,
              colToFile(fromC), rowToRank(fromR),
              colToFile(toC), rowToRank(toR));
 
@@ -249,9 +262,9 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud)
     int row = GPOINTER_TO_INT(ud) / 100;
     int col = GPOINTER_TO_INT(ud) % 100;
 
-    bool turn_played = process_cell_click(&controller, row, col);
+    bool turn_played = process_cell_click(controller, row, col);
 
-    if (controller_in_anteating(&controller) == true)
+    if (controller_in_anteating(controller) == true)
     {
         gtk_widget_show(btn_end_turn);
     }
@@ -275,7 +288,7 @@ static void on_new_game(GtkButton *b, gpointer d)
 {
     (void)b;
     (void)d;
-    init_controller(&controller);
+    init_game(controller);
 	start_timer();
     refresh_all();
     update_status();
@@ -285,7 +298,7 @@ static void end_turn(GtkButton *b, gpointer d)
 {
     (void)b;
     (void)d;
-    process_end_turn(&controller);
+    process_end_turn(controller);
     gtk_widget_hide(btn_end_turn);
     start_timer();
     refresh_all();
@@ -460,9 +473,8 @@ static void on_play(GtkButton* btn, gpointer user_data) {
     (void)btn;
     MenuData* md = (MenuData*)user_data;
 
-    g_player_color = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(md->select_color)) ? WHITE : BLACK;
-    g_opponent_type = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(md->select_opp)) ? OPPONENT_HUMAN : OPPONENT_COMPUTER;
-    set_first_turn(&controller, g_player_color);
+    *g_player_color = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(md->select_color)) ? WHITE : BLACK;
+    *g_opponent_type = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(md->select_opp)) ? OPPONENT_HUMAN : OPPONENT_COMPUTER;
 
     launch_game_window();
     gtk_widget_destroy(md->window);
@@ -643,7 +655,7 @@ static void show_menu_window(void) {
 }
 
 static void launch_game_window(void) {
-    init_controller(&controller);
+    init_game(controller);
     GtkWidget* win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(win), "Anteater Chess");
     gtk_window_set_resizable(GTK_WINDOW(win), FALSE);

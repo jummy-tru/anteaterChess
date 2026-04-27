@@ -7,23 +7,6 @@
 #include "rules.h"
 #include "gui.h"
 
-void set_first_turn(GameController *c, Color first_turn)
-{
-    c->first_turn = first_turn;
-}
-
-// Controller initial setup
-void init_controller(GameController *c)
-{
-    setupBoard(&c->board, c->first_turn);
-    c->legal_moves.index = 0;
-    init_timer(&c->timer);
-    c->square_selected = false;
-    c->show_end_turn = false;
-    c->sel_col = -1;
-    c->sel_row = -1;
-}
-
 void select_square(GameController *c, int row, int col)
 {
     c->square_selected = true;
@@ -74,72 +57,6 @@ int get_selected_row(GameController *c)
 int get_selected_col(GameController *c)
 {
     return c->sel_col;
-}
-
-// Returns true if a valid turn was made, returns false if not
-bool process_cell_click(GameController *controller, int row, int col)
-{
-    Piece clicked = controller_get_piece_at(controller, row, col);
-    int own = isOwnPiece(clicked, get_current_turn(controller));
-
-    if (!is_square_selected(controller))
-    {
-        if (own)
-        {
-            select_square(controller, row, col);
-            return false;
-        }
-    }
-    else
-    {
-        if (is_legal_target(row, col, controller))
-        {
-            Move playedMove = get_played_move(row, col, controller);
-            Piece selected = get_selected_piece(controller);
-            log_move_to_sidebar(selected, get_selected_row(controller), get_selected_col(controller), row, col);
-            Piece target = controller_get_piece_at(controller, row, col);
-            
-            if (selected.pieceType == ANTEATER && target.pieceType == PAWN)
-            {
-                update_anteating(controller, true);
-                controller->show_end_turn = true;
-            }
-            applyMove(&controller->board, playedMove);
-
-            if (controller_in_anteating(controller) == false)
-            {
-				switch_turn(controller);
-                clear_selection(controller);
-                return true;
-            }
-            else
-            {
-                clear_selection(controller);
-                legalMovesForPiece(&controller->board, row, col, &controller->legal_moves);
-                if (controller->legal_moves.index == 0)
-                {
-                    controller->board.isAntEating = false;
-                    controller->show_end_turn = false;
-                    switch_turn(controller);
-                    return true;
-                }
-                return true;
-            }
-        }
-        else if (own)
-        {
-            select_square(controller, row, col);
-            controller->legal_moves.index = 0;
-            legalMovesForPiece(&controller->board, row, col, &controller->legal_moves);
-            return false;
-        }
-        else
-        {
-            clear_selection(controller);
-            controller->legal_moves.index = 0;
-            return false;
-        }
-    }
 }
 
 void process_end_turn(GameController *c)

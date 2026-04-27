@@ -6,7 +6,6 @@
 
 typedef struct {
     Board board;
-    Color first_turn;
     bool square_selected;
     bool show_end_turn;
     int sel_row;
@@ -16,8 +15,8 @@ typedef struct {
     Timer timer;
 } GameController;
 
-void set_first_turn(GameController *c, Color first_turn);
-void init_controller(GameController *c);
+// opponent type and color selection
+typedef enum { OPPONENT_HUMAN, OPPONENT_COMPUTER } OpponentType;
 
 void select_square(GameController *c, int row, int col);
 void clear_selection(GameController *c);
@@ -28,7 +27,6 @@ Piece controller_get_piece_at(GameController *c, int row, int col);
 int get_selected_row(GameController *c);
 int get_selected_col(GameController *c);
 
-bool process_cell_click(GameController *controller, int row, int col);
 void process_end_turn(GameController *c);
 
 Move get_played_move(int row, int col, GameController *c);

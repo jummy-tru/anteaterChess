@@ -1,11 +1,22 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <time.h>
 #include "bots.h"
 #include "pieces.h"
 #include "board.h"
 #include "moves.h"
 #include "rules.h"
 #include "controller.h"
+
+// The most simple type of engine, picking legal moves randomly.
+Move randomMove(GameController *c)
+{
+    Color current_turn = get_current_turn(c);
+    allLegalMoves(&c->board, current_turn, &c->legal_moves);
+    int random_selection = (rand() % c->legal_moves.index);
+    return c->legal_moves.list[random_selection];
+}
 
 //Assign material points to piece 
 int evalBoard(Board* board){
@@ -97,12 +108,8 @@ Move getBotMove(Board* board){
                 bestMove = moves.list[i];
             }
         }
-       
     }
-
     return bestMove;
-
-    
 }
 
 int minimax(Board* board, int depth, bool isWhite){
@@ -145,7 +152,8 @@ int minimax(Board* board, int depth, bool isWhite){
         }
         return bestScore;
     }
-    else{
+    else
+    {
         int bestScore = 99999;
         for(int i = 0; i < moves.index;i++){
             Board temp;
@@ -160,5 +168,4 @@ int minimax(Board* board, int depth, bool isWhite){
         }
         return bestScore;
     }
-
 }

@@ -223,13 +223,13 @@ int loadBoardFromFEN(Board *board, const char *fen)
 }
 
 // Loads the board using the FEN notation for a board state
-void setupBoard(Board *board, Color first_turn)
+void setupBoard(Board *board)
 {
   // String Representing the starting state
   const char *startingFEN = "rnbaqkabnr/pppppppppp/10/10/10/10/PPPPPPPPPP/RNBAQKABNR";
 
   loadBoardFromFEN(board, startingFEN);
-  board->currentTurn = first_turn;
+  board->currentTurn = WHITE;
   board->moveCount = 0;
   board->isAntEating = false;
 }
@@ -264,6 +264,7 @@ void movePiece(Board *board, int fromRow, int fromColumn, int toRow, int toColum
 void applyMove(Board *board, Move move)
 {
   Piece movingPiece = getPiece(board, move.fromRow, move.fromCol);
+  movingPiece.hasMoved = true;
   Piece empty = makePiece(EMPTY, NONE);
 
   // Store the real move, including special flags

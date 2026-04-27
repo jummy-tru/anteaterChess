@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <gtk/gtk.h>
 
 #include "pieces.h"
@@ -8,17 +9,139 @@
 #include "moves.h"
 #include "controller.h"
 #include "gui.h"
+#include "bots.h"
+#include "main_funct.h"
+
+typedef struct {
+  GameController controller;
+  OpponentType opponent;
+  Color player_color;
+} GameType;
+
+static GameType game_type;
+
+// Game initial setup
+void init_game(GameController *c)
+{
+    setupBoard(&c->board);
+    c->legal_moves.index = 0;
+    init_timer(&c->timer);
+    c->square_selected = false;
+    c->show_end_turn = false;
+    c->sel_col = -1;
+    c->sel_row = -1;
+
+    if (game_type.player_color == BLACK && game_type.opponent == OPPONENT_COMPUTER)
+    { 
+      Move bot_move = randomMove(c);
+      applyMove(&c->board, bot_move);
+      switch_turn(c);
+    }
+}
+
+// Returns true if a valid turn was made, returns false if not
+bool process_cell_click(GameController *controller, int row, int col)
+{
+  Piece clicked = controller_get_piece_at(controller, row, col);
+  int own = isOwnPiece(clicked, get_current_turn(controller));
+
+  if (!is_square_selected(controller))
+  {
+    if (own)
+    {
+      select_square(controller, row, col);
+      return false;
+    }
+  }
+  else
+  {
+    if (is_legal_target(row, col, controller))
+    {
+      Move playedMove = get_played_move(row, col, controller);
+      Piece selected = get_selected_piece(controller);
+      log_move_to_sidebar(selected, get_selected_row(controller), get_selected_col(controller), row, col);
+      Piece target = controller_get_piece_at(controller, row, col);
+      
+      if (selected.pieceType == ANTEATER && target.pieceType == PAWN)
+      {
+        update_anteating(controller, true);
+        controller->show_end_turn = true;
+      }
+      applyMove(&controller->board, playedMove);
+
+      if (controller_in_anteating(controller) == false)
+      {
+        switch_turn(controller);
+        clear_selection(controller);
+        play_bot_turns(controller);
+        return true;
+      }
+      else
+      {
+        clear_selection(controller);
+        legalMovesForPiece(&controller->board, row, col, &controller->legal_moves);
+        if (controller->legal_moves.index == 0)
+        {
+          controller->board.isAntEating = false;
+          controller->show_end_turn = false;
+          switch_turn(controller);
+          play_bot_turns(controller);
+          return true;
+        }
+        return true;
+      }
+    }
+    else if (own)
+    {
+      select_square(controller, row, col);
+      controller->legal_moves.index = 0;
+      legalMovesForPiece(&controller->board, row, col, &controller->legal_moves);
+      return false;
+    }
+    else
+    {
+      clear_selection(controller);
+      controller->legal_moves.index = 0;
+      return false;
+    }
+  }
+}
+
+void play_bot_turns(GameController *c)
+{
+  if (game_type.opponent == OPPONENT_HUMAN)
+  {
+    return;
+  }
+  if (c->board.currentTurn != game_type.player_color)
+  {
+    Move bot_move = randomMove(c);
+    Piece selected = controller_get_piece_at(c, bot_move.fromRow, bot_move.fromCol);
+    Piece target = controller_get_piece_at(c, bot_move.toRow, bot_move.toCol);
+    
+    if (selected.pieceType == ANTEATER && target.pieceType == PAWN)
+    {
+      log_move_to_sidebar(selected, get_selected_row(c), get_selected_col(c), bot_move.toRow, bot_move.toCol);
+      update_anteating(c, true);
+      applyMove(&c->board, bot_move);
+    }
+    else
+    {
+      log_move_to_sidebar(selected, get_selected_row(c), get_selected_col(c), bot_move.toRow, bot_move.toCol);
+      applyMove(&c->board, bot_move);
+      switch_turn(c);
+    }
+  }
+}
 
 int main(int argc, char *argv[])
 {
-  run_gui(argc, argv);
+  srand(time(NULL));
 
-  /*Board board;
-  Board *boardPtr = &board;
-  setupBoard(boardPtr);
-  showBoard(boardPtr);
-  /*
-  
+  set_controller(&game_type.controller);
+  set_opponent_type(&game_type.opponent);
+  set_player_color(&game_type.player_color);
+  run_gui(argc, argv);
 /*
 Loop instruction
 1. Ask user to input move
@@ -38,31 +161,5 @@ IF ANY OF THE VALIDATION FAIL THEN LOOP BACK TO USER PROMPT (1)
 13. Loop
 IF THE GAME STATE IS CHECKMATE OR STALEMATE, LOOP IS DEAD
 */
-
   return 0;
-
-  /*
-  // TEST CASE #1 
-  // can move test cases somewhere else eventually
-  // This test creates a queen in the middle of the board and checks for valid moves
-  Board board;
-  Board *boardPtr = &board;
-  loadBoardFromFEN(boardPtr, "1rnbqkbnr1/pppppppppp/10/5Q4/10/10/PPPPPPPPPP/1RNBQKBNR1");
-  MoveList ml;
-  ml.index = 0;
-  MoveList *mlPtr = &ml;
-  showBoard(boardPtr);
-
-  int queenRow = rankToRow(5);
-  int queenCol = fileToCol('F');
-  Piece queen = getPiece(boardPtr,queenRow,queenCol);
-  Piece *queenPtr = &queen;
-  possibleMoves(queenPtr, boardPtr, queenRow, queenCol, mlPtr);
-
-  for (int i = 0; i < mlPtr->index; i++)
-  {
-    printf("From: %c%i To: %c%i \n", colToFile(mlPtr->list[i].fromCol), rowToRank(mlPtr->list[i].fromRow), colToFile(mlPtr->list[i].toCol), rowToRank(mlPtr->list[i].toRow));
-  }
-  return 0;
-  */
 }
