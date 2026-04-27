@@ -8,7 +8,7 @@
 #include "moves.h"
 #include "rules.h"
 #include "controller.h"
-#include "clock.h"
+#include "bots.h"
 #include "gui.h"
 #include "main_funct.h"
 
@@ -276,6 +276,21 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud)
     if (turn_played)
     {
         start_timer();
+		if (g_opponent_type == OPPONENT_COMPUTER && get_current_turn(&controller) != g_player_color &&
+            !controller_in_checkmate(&controller) && !controller_in_stalemate(&controller)) {
+            Move bot_move = getBotMove(&controller.board);
+ 
+            // Only apply if a valid move was returned
+            if (bot_move.fromRow != -1)
+            {
+                Piece bot_piece = controller_get_piece_at(&controller, bot_move.fromRow, bot_move.fromCol);
+                log_move_to_sidebar(bot_piece, bot_move.fromRow, bot_move.fromCol, bot_move.toRow, bot_move.toCol);
+                applyMove(&controller.board, bot_move);
+                switch_turn(&controller);
+                clear_selection(&controller);
+                start_timer();
+            }
+        }
     }
     refresh_all();
     refresh_timer();
