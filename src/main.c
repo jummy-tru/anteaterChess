@@ -66,12 +66,20 @@ bool process_cell_click(GameController *controller, int row, int col)
         playedMove.promoteTo = show_promotion_popup(get_current_turn(controller));
       }
 
+      Piece selectedPiece = controller_get_piece_at(controller, fromR, fromC);
+      Piece targetPiece = controller_get_piece_at(controller, row, col);
+
       applyMove(&controller->board, playedMove);
 
       Piece finalPiece = controller_get_piece_at(controller, row, col);
       log_move_to_sidebar(finalPiece, fromR, fromC, row, col);
 
-      if (finalPiece.pieceType == ANTEATER && controller_in_anteating(controller))
+      if (selectedPiece.pieceType == ANTEATER && targetPiece.pieceType == PAWN)
+      {
+        update_anteating(controller, true);
+      }
+
+      if (selectedPiece.pieceType == ANTEATER && controller_in_anteating(controller))
       {
           controller->show_end_turn = true;
       }
