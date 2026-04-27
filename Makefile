@@ -19,7 +19,8 @@ bin/%.o: src/%.c
 
 clean:
 	rm -f $(OBJ) $(TARGET)
-	rm -f src/*.o src/*.out
+	rm -f src/*.o src/*.exe src/*.out
+	rm -f *.exe *.out
 
 tar: clean
 	mkdir -p Chess_Alpha_src/bin
