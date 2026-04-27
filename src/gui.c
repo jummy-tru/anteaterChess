@@ -226,7 +226,7 @@ static void start_timer(void) {
 
 static void clear_move_log(void)
 {
-    FILE *f = fopen("gamelog.txt", "w");
+    FILE *f = fopen("bin/gamelog.txt", "w");
     if (f != NULL)
     {
         fprintf(f, "--- New Game Started ---\n");
@@ -264,7 +264,7 @@ void log_move_to_sidebar(Piece p, int fromR, int fromC, int toR, int toC) {
              colToFile(toC), rowToRank(toR));
 
     // Write to output file
-    FILE *f = fopen("gamelog.txt", "a");
+    FILE *f = fopen("bin/gamelog.txt", "a");
     if (f != NULL) {
         fprintf(f, "%s", move_str);
         fclose(f);
