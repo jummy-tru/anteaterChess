@@ -1,22 +1,24 @@
 // implementing clock
 #include "clock.h"
 
-static int time_left;
-
-void init_clock(int seconds) {
-    time_left = seconds;
+void init_timer(Timer *t) {
+    t->elapsed_seconds = 0;
+    t->warning_shown = false;
 }
 
-void update_clock() {
-    if (time_left > 0) {
-        time_left--;
+void increment_timer(Timer *t) {
+    t->elapsed_seconds++;
+    if (t->elapsed_seconds >= 60)
+    {
+        t->warning_shown = true;
     }
 }
 
-int get_time_left() {
-    return time_left;
+int get_time_elapsed(Timer *t) {
+    return t->elapsed_seconds;
 }
 
-int is_time_up() {
-    return time_left <= 0;
+bool get_warning_status(Timer *t)
+{
+    return t->warning_shown;
 }

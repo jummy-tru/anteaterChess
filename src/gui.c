@@ -7,13 +7,15 @@
 #include "board.h"
 #include "moves.h"
 #include "rules.h"
+#include "controller.h"
+#include "clock.h"
 
 #define SQ 80
-#define WARNING_SECONDS 60
 
-//oponent type and color selection
+// opponent type and color selection
 typedef enum { OPPONENT_HUMAN, OPPONENT_COMPUTER } OpponentType;
 
+static GameController controller;
 static Color g_player_color = WHITE;
 static OpponentType g_opponent_type = OPPONENT_HUMAN;
 static GtkWidget *g_history_text = NULL;
@@ -69,16 +71,6 @@ static const char *piece_image(Piece p)
     }
 }
 
-static Board g_board;
-
-// Selection state
-static int g_selected = 0;
-static int g_sel_row = 0;
-static int g_sel_col = 0;
-
-// legal moves for currently selected piece
-static MoveList g_hints;
-
 typedef struct
 {
     GtkWidget *event_box;
@@ -93,10 +85,7 @@ static Cell g_cells[ROWS][COLS];
 static GtkWidget *g_status_label = NULL;
 static GtkWidget *btn_end_turn = NULL;
 static GtkWidget* g_timer_label = NULL;
-
 static guint g_timer_id = 0;
-static int g_elapsed_seconds = 0;
-static int g_warning_shown = 0;
 
 
 static void set_highlight(int r, int c, int highlighted)
@@ -110,18 +99,6 @@ static void set_highlight(int r, int c, int highlighted)
         // Clear the image when the square is not selected
         gtk_image_clear(GTK_IMAGE(g_cells[r][c].hi_img));
     }
-}
-
-static int is_hint_square(int r, int c)
-{
-    for (int i = 0; i < g_hints.index; i++)
-    {
-        if (g_hints.list[i].toRow == r && g_hints.list[i].toCol == c)
-        {
-            return 1;
-        }
-    }
-    return 0;
 }
 
 static void set_hint(int r, int c, int show_hint)
@@ -138,7 +115,7 @@ static void set_hint(int r, int c, int show_hint)
 
 static void refresh_cell(int r, int c)
 {
-    Piece p = getPiece(&g_board, r, c);
+    Piece p = controller_get_piece_at(&controller, r, c);
     const char *img = piece_image(p);
     if (img)
     {
@@ -159,7 +136,7 @@ static void refresh_all(void)
 
             refresh_cell(r, c);
 
-            if (g_selected && is_hint_square(r, c))
+            if (is_square_selected(&controller) && is_hint_square(&controller, r, c))
             {
                 set_hint(r, c, 1);
             }
@@ -168,7 +145,7 @@ static void refresh_all(void)
                 set_hint(r, c, 0);
             }
 
-            if (g_selected && r == g_sel_row && c == g_sel_col)
+            if (is_square_selected(&controller) && r == get_selected_row(&controller) && c == get_selected_col(&controller))
             {
                 set_highlight(r, c, 1);
             }
@@ -183,8 +160,8 @@ static void refresh_all(void)
 static void refresh_timer(void) {
 	if (!g_timer_label) return;
 
-    int minutes = g_elapsed_seconds / 60;
-    int seconds = g_elapsed_seconds % 60;
+    int minutes = controller_get_time_elapsed(&controller) / 60;
+    int seconds = controller_get_time_elapsed(&controller) % 60;
     char buf[32];
     snprintf(buf, sizeof buf, "Time: %02d:%02d", minutes, seconds);
 	gtk_label_set_text(GTK_LABEL(g_timer_label), buf);
@@ -200,18 +177,16 @@ static void stop_timer(void) {
 
 static void update_status(void)
 {
-    Color c = g_board.currentTurn;
-
-    if (isCheckmate(&g_board, c))
+    Color c = get_current_turn(&controller);
+    if (controller_in_checkmate(&controller))
         gtk_label_set_text(GTK_LABEL(g_status_label),
                            c == WHITE ? "Checkmate! Black wins!" : "Checkmate! White wins!");
-    else if (isStalemate(&g_board, c))
+    else if (controller_in_stalemate(&controller))
         gtk_label_set_text(GTK_LABEL(g_status_label), "Stalemate! Draw.");
-	else if (g_elapsed_seconds >= WARNING_SECONDS)
+	else if (controller_get_warning_status(&controller))
     {
         gtk_label_set_text(GTK_LABEL(g_status_label),
                            c == WHITE ? "White to move. Warning: Time is over 1:00" : "Black to move. Warning: Time is over 1:00");
-        g_warning_shown = 1;
     }
     else
         gtk_label_set_text(GTK_LABEL(g_status_label),
@@ -221,51 +196,22 @@ static void update_status(void)
 static gboolean on_timer_tick(gpointer data) {
     (void)data;
 
-	g_elapsed_seconds++;
+    controller_increment_timer(&controller);
 	refresh_timer();
-
-    if(!g_warning_shown && g_elapsed_seconds >= WARNING_SECONDS) {
-		g_warning_shown = 1;
-        update_status();
-	}
+    update_status();
 
 	return TRUE; // Continue calling the timer
 }
 
 static void start_timer(void) {
     stop_timer(); // Ensure any existing timer is stopped
-    g_elapsed_seconds = 0;
-    g_warning_shown = 0;
     refresh_timer();
     g_timer_id = g_timeout_add_seconds(1, on_timer_tick, NULL);
 
 	update_status();
 }
 
-static void switch_turn(void) {
-    g_board.currentTurn = (g_board.currentTurn == WHITE) ? BLACK : WHITE;
-    start_timer();
-}
-
-static int is_legal_target(int r, int c)
-{
-    for (int i = 0; i < g_hints.index; i++)
-        if (g_hints.list[i].toRow == r && g_hints.list[i].toCol == c)
-            return 1;
-    return 0;
-}
-
-// Only use when move is known to be legal
-static Move get_played_move(int r, int c)
-{
-    for (int i = 0; i < g_hints.index; i++)
-        if (g_hints.list[i].toRow == r && g_hints.list[i].toCol == c)
-            return g_hints.list[i];
-    
-    return createMove(-1, -1, -1, -1);
-}
-
-static void log_move_to_sidebar(Piece p, int fromR, int fromC, int toR, int toC) {
+void log_move_to_sidebar(Piece p, int fromR, int fromC, int toR, int toC) {
     if (!g_history_text) return;
 
     char move_str[64];
@@ -284,9 +230,9 @@ static void log_move_to_sidebar(Piece p, int fromR, int fromC, int toR, int toC)
     }
 
     snprintf(move_str, sizeof(move_str), "%d. %c%c: %c%d -> %c%d\n",
-             g_board.moveCount, colorChar, typeChar,
+             controller_get_move_count(&controller) + 1, colorChar, typeChar,
              colToFile(fromC), rowToRank(fromR),
-             colToFile(toC), rowToRank(toC));
+             colToFile(toC), rowToRank(toR));
 
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(g_history_text));
     GtkTextIter end;
@@ -303,73 +249,24 @@ static gboolean on_cell_click(GtkWidget *w, GdkEventButton *ev, gpointer ud)
     int row = GPOINTER_TO_INT(ud) / 100;
     int col = GPOINTER_TO_INT(ud) % 100;
 
-    Piece clicked = getPiece(&g_board, row, col);
-    int own = isOwnPiece(clicked, g_board.currentTurn);
+    bool turn_played = process_cell_click(&controller, row, col);
 
-    if (!g_selected)
+    if (controller_in_anteating(&controller) == true)
     {
-        if (own)
-        {
-            g_selected = 1;
-            g_sel_row = row;
-            g_sel_col = col;
-            g_hints.index = 0;
-            legalMovesForPiece(&g_board, row, col, &g_hints);
-            refresh_all();
-        }
+        gtk_widget_show(btn_end_turn);
     }
     else
     {
-        if (is_legal_target(row, col))
-        {
-            Move playedMove = get_played_move(row, col);
-            Piece selected = getPiece(&g_board, g_sel_row, g_sel_col);
-            log_move_to_sidebar(selected, g_sel_row, g_sel_col, row, col);
-            Piece target = getPiece(&g_board, row, col);
-            
-            if (selected.pieceType == ANTEATER && target.pieceType == PAWN)
-            {
-                g_board.isAntEating = true;
-                gtk_widget_show(btn_end_turn);
-            }
-            applyMove(&g_board, playedMove);
-
-            if (g_board.isAntEating == false)
-            {
-				switch_turn();
-                g_selected = 0;
-                g_hints.index = 0;
-                refresh_all();
-            }
-            else
-            {
-                g_selected = 0;
-                g_hints.index = 0;
-                legalMovesForPiece(&g_board, row, col, &g_hints);
-                if (g_hints.index == 0)
-                {
-                    g_board.isAntEating = false;
-                    gtk_widget_hide(btn_end_turn);
-					switch_turn();
-                }
-                refresh_all();
-            }
-        }
-        else if (own)
-        {
-            g_sel_row = row;
-            g_sel_col = col;
-            g_hints.index = 0;
-            legalMovesForPiece(&g_board, row, col, &g_hints);
-            refresh_all();
-        }
-        else
-        {
-            g_selected = 0;
-            g_hints.index = 0;
-            refresh_all();
-        }
+        gtk_widget_hide(btn_end_turn);
     }
+
+    if (turn_played)
+    {
+        start_timer();
+    }
+    refresh_all();
+    refresh_timer();
+    update_status();
 
     return TRUE;
 }
@@ -378,10 +275,8 @@ static void on_new_game(GtkButton *b, gpointer d)
 {
     (void)b;
     (void)d;
-    setupBoard(&g_board);
+    init_controller(&controller);
 	start_timer();
-    g_selected = 0;
-    g_hints.index = 0;
     refresh_all();
     update_status();
 }
@@ -390,9 +285,9 @@ static void end_turn(GtkButton *b, gpointer d)
 {
     (void)b;
     (void)d;
-    g_board.isAntEating = false;
+    process_end_turn(&controller);
     gtk_widget_hide(btn_end_turn);
-	switch_turn();
+    start_timer();
     refresh_all();
 }
 
@@ -567,6 +462,7 @@ static void on_play(GtkButton* btn, gpointer user_data) {
 
     g_player_color = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(md->select_color)) ? WHITE : BLACK;
     g_opponent_type = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(md->select_opp)) ? OPPONENT_HUMAN : OPPONENT_COMPUTER;
+    set_first_turn(&controller, g_player_color);
 
     launch_game_window();
     gtk_widget_destroy(md->window);
@@ -747,9 +643,7 @@ static void show_menu_window(void) {
 }
 
 static void launch_game_window(void) {
-    setupBoard(&g_board);
-    g_hints.index = 0;
-
+    init_controller(&controller);
     GtkWidget* win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(win), "Anteater Chess");
     gtk_window_set_resizable(GTK_WINDOW(win), FALSE);
@@ -932,7 +826,7 @@ static void launch_game_window(void) {
 	gtk_container_add(GTK_CONTAINER(status_box), g_status_label);
 
     refresh_all();
-    start_timer();
+    update_status();
     gtk_widget_show_all(win);
     gtk_widget_hide(btn_end_turn);
 }

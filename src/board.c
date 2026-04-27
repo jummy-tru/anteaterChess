@@ -223,13 +223,13 @@ int loadBoardFromFEN(Board *board, const char *fen)
 }
 
 // Loads the board using the FEN notation for a board state
-void setupBoard(Board *board)
+void setupBoard(Board *board, Color first_turn)
 {
   // String Representing the starting state
   const char *startingFEN = "rnbaqkabnr/pppppppppp/10/10/10/10/PPPPPPPPPP/RNBAQKABNR";
 
   loadBoardFromFEN(board, startingFEN);
-  board->currentTurn = WHITE;
+  board->currentTurn = first_turn;
   board->moveCount = 0;
   board->isAntEating = false;
 }
