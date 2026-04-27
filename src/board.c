@@ -14,6 +14,8 @@ Move createMove(int fromRow, int fromCol, int toRow, int toCol)
   move.toCol = toCol;
   move.isCastling = false;
   move.isEnPassant = false;
+  move.isPromotion = false; 
+  move.promoteTo = EMPTY;
   return move;
 }
 
@@ -297,6 +299,12 @@ void applyMove(Board *board, Move move)
       board->squares[move.fromRow][4].hasMoved = true;
       replacePiece(board, move.fromRow, 0, empty);
     }
+  }
+
+  // Promotion 
+  if (move.isPromotion)
+  {
+    movingPiece.pieceType = move.promoteTo; 
   }
 
   // Move the main piece

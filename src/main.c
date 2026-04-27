@@ -58,22 +58,24 @@ bool process_cell_click(GameController *controller, int row, int col)
     if (is_legal_target(row, col, controller))
     {
       Move playedMove = get_played_move(row, col, controller);
-      Piece selected = get_selected_piece(controller);
-      log_move_to_sidebar(selected, get_selected_row(controller), get_selected_col(controller), row, col);
-      Piece target = controller_get_piece_at(controller, row, col);
+      int fromR = get_selected_row(controller);
+      int fromC = get_selected_col(controller);
       
-      if (selected.pieceType == ANTEATER && target.pieceType == PAWN)
-      {
-        update_anteating(controller, true);
-        controller->show_end_turn = true;
-      }
       applyMove(&controller->board, playedMove);
+
+      Piece finalPiece = controller_get_piece_at(controller, row, col);
+      log_move_to_sidebar(finalPiece, fromR, fromC, row, col);
+
+      if (finalPiece.pieceType == ANTEATER && controller_in_anteating(controller))
+      {
+          controller->show_end_turn = true;
+      }
 
       if (controller_in_anteating(controller) == false)
       {
         switch_turn(controller);
         clear_selection(controller);
-        play_bot_turns(controller);
+        play_bot_turns(controller); 
         return true;
       }
       else
@@ -94,17 +96,15 @@ bool process_cell_click(GameController *controller, int row, int col)
     else if (own)
     {
       select_square(controller, row, col);
-      controller->legal_moves.index = 0;
-      legalMovesForPiece(&controller->board, row, col, &controller->legal_moves);
       return false;
     }
     else
     {
       clear_selection(controller);
-      controller->legal_moves.index = 0;
       return false;
     }
   }
+  return false;
 }
 
 void play_bot_turns(GameController *c)

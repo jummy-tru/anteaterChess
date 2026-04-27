@@ -154,18 +154,18 @@ void possiblePawnMoves(Piece *piece, Board *board, int row, int col, MoveList *a
   int twoStepRow;
   int leftCaptureCol = col - 1;
   int rightCaptureCol = col + 1;
+  // Promotion occurs at the last rank (0 for White, 7 for Black)
+  int promotionRow = (piece->color == WHITE) ? 0 : 7; 
 
-  // White moves upward on the board array (toward smaller row index)
-  // Black moves downward on the board array (toward larger row index)
   if (piece->color == WHITE)
   {
     direction = -1;
-    startRow = 6; // white pawns start on rank 2
+    startRow = 6; 
   }
   else if (piece->color == BLACK)
   {
     direction = 1;
-    startRow = 1; // black pawns start on rank 7
+    startRow = 1; 
   }
   else
   {
@@ -178,56 +178,61 @@ void possiblePawnMoves(Piece *piece, Board *board, int row, int col, MoveList *a
   // Forward one square: only if inside board and empty
   if (isInsideBoard(oneStepRow, col) && getPiece(board, oneStepRow, col).pieceType == EMPTY)
   {
-    availableMoves->list[availableMoves->index] = createMove(row, col, oneStepRow, col);
-    availableMoves->index++;
+    Move m = createMove(row, col, oneStepRow, col);
+    if (oneStepRow == promotionRow) {
+        m.isPromotion = true;
+        m.promoteTo = QUEEN; // Default to Queen for now
+    }
+    availableMoves->list[availableMoves->index++] = m;
 
-    // Forward two squares: only from starting row,
-    // and only if both intermediate and destination are empty
-    if (row == startRow && isInsideBoard(twoStepRow, col) && getPiece(board, twoStepRow, col).pieceType == EMPTY)
+    // Forward two squares: only from starting row, and only if path is clear
+    if (row == startRow && isInsideBoard(twoStepRow, col) && 
+        getPiece(board, twoStepRow, col).pieceType == EMPTY)
     {
-      availableMoves->list[availableMoves->index] = createMove(row, col, twoStepRow, col);
-      availableMoves->index++;
+      availableMoves->list[availableMoves->index++] = createMove(row, col, twoStepRow, col);
     }
   }
 
   // Diagonal capture to the left
   if (isInsideBoard(oneStepRow, leftCaptureCol) && isEnemyPiece(getPiece(board, oneStepRow, leftCaptureCol), piece->color))
   {
-    availableMoves->list[availableMoves->index] = createMove(row, col, oneStepRow, leftCaptureCol);
-    availableMoves->index++;
+    Move m = createMove(row, col, oneStepRow, leftCaptureCol);
+    if (oneStepRow == promotionRow) {
+        m.isPromotion = true;
+        m.promoteTo = QUEEN;
+    }
+    availableMoves->list[availableMoves->index++] = m;
   }
 
   // Diagonal capture to the right
   if (isInsideBoard(oneStepRow, rightCaptureCol) && isEnemyPiece(getPiece(board, oneStepRow, rightCaptureCol), piece->color))
   {
-    availableMoves->list[availableMoves->index] = createMove(row, col, oneStepRow, rightCaptureCol);
-    availableMoves->index++;
+    Move m = createMove(row, col, oneStepRow, rightCaptureCol);
+    if (oneStepRow == promotionRow) {
+        m.isPromotion = true;
+        m.promoteTo = QUEEN;
+    }
+    availableMoves->list[availableMoves->index++] = m;
   }
 
-  // En passant
-  // Only possible if at least one move has already been played
+  // En passant (En passant cannot result in a promotion)
   if (board->moveCount > 0)
   {
     Move lastMove = board->history[board->moveCount - 1];
-
     Piece lastMovedPiece = getPiece(board, lastMove.toRow, lastMove.toCol);
 
-    // Last move must be an enemy pawn that moved two squares
     if (lastMovedPiece.pieceType == PAWN && lastMovedPiece.color != piece->color && abs(lastMove.toRow - lastMove.fromRow) == 2)
     {
-      // That pawn must now be directly next to this pawn
       if (lastMove.toRow == row && abs(lastMove.toCol - col) == 1)
       {
         int enPassantRow = row + direction;
         int enPassantCol = lastMove.toCol;
 
-        // Destination must be on board and empty
         if (isInsideBoard(enPassantRow, enPassantCol) && getPiece(board, enPassantRow, enPassantCol).pieceType == EMPTY)
         {
           Move enPassant = createMove(row, col, enPassantRow, enPassantCol);
           enPassant.isEnPassant = true;
-          availableMoves->list[availableMoves->index] = enPassant;
-          availableMoves->index++;
+          availableMoves->list[availableMoves->index++] = enPassant;
         }
       }
     }

@@ -14,6 +14,8 @@ typedef struct
 	int toCol;
 	bool isCastling;
 	bool isEnPassant;
+	bool isPromotion;
+	PieceType promoteTo;
 } Move;
 
 typedef struct

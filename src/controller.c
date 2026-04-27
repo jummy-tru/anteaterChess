@@ -7,6 +7,20 @@
 #include "rules.h"
 #include "gui.h"
 
+
+
+// Controller initial setup
+void init_controller(GameController *c)
+{
+    setupBoard(&c->board);
+    c->legal_moves.index = 0;
+    init_timer(&c->timer);
+    c->square_selected = false;
+    c->show_end_turn = false;
+    c->sel_col = -1;
+    c->sel_row = -1;
+}
+
 void select_square(GameController *c, int row, int col)
 {
     c->square_selected = true;
