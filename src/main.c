@@ -32,10 +32,8 @@ void init_game(GameController *c)
     c->sel_row = -1;
 
     if (game_type.player_color == BLACK && game_type.opponent == OPPONENT_COMPUTER)
-    { 
-      Move bot_move = randomMove(c);
-      applyMove(&c->board, bot_move);
-      switch_turn(c);
+    {
+      play_bot_turns(c);
     }
 }
 
@@ -120,22 +118,38 @@ void play_bot_turns(GameController *c)
   {
     return;
   }
-  if (c->board.currentTurn != game_type.player_color)
+
+  while (c->board.currentTurn != game_type.player_color)
   {
-    Move bot_move = randomMove(c);
+    Move bot_move = getBotMove(c);
+    if (bot_move.fromRow < 0 || bot_move.fromCol < 0)
+    {
+      return;
+    }
+
     Piece selected = controller_get_piece_at(c, bot_move.fromRow, bot_move.fromCol);
     Piece target = controller_get_piece_at(c, bot_move.toRow, bot_move.toCol);
-    
+
+    applyMove(&c->board, bot_move);
+    log_move_to_sidebar(selected, bot_move.fromRow, bot_move.fromCol, bot_move.toRow, bot_move.toCol);
+
     if (selected.pieceType == ANTEATER && target.pieceType == PAWN)
     {
-      log_move_to_sidebar(selected, get_selected_row(c), get_selected_col(c), bot_move.toRow, bot_move.toCol);
       update_anteating(c, true);
-      applyMove(&c->board, bot_move);
+
+      legalMovesForPiece(&c->board, bot_move.toRow, bot_move.toCol, &c->legal_moves);
+      if (c->legal_moves.index > 0)
+      {
+        continue;
+      }
+
+      update_anteating(c, false);
+      c->show_end_turn = false;
+      switch_turn(c);
     }
     else
     {
-      log_move_to_sidebar(selected, get_selected_row(c), get_selected_col(c), bot_move.toRow, bot_move.toCol);
-      applyMove(&c->board, bot_move);
+      update_anteating(c, false);
       switch_turn(c);
     }
   }

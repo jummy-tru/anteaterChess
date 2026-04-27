@@ -8,7 +8,7 @@
 
 Move randomMove(GameController *c);
 int evalBoard(Board* board);
-Move getBotMove(Board * board);
-int minimax(Board* board, int depth, bool isWhite);
+Move getBotMove(GameController *c);
+int minimax(Board* board, int depth, bool isWhite, int alpha, int beta);
 
 #endif

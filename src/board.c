@@ -266,6 +266,18 @@ void movePiece(Board *board, int fromRow, int fromColumn, int toRow, int toColum
 void applyMove(Board *board, Move move)
 {
   Piece movingPiece = getPiece(board, move.fromRow, move.fromCol);
+
+  move.firstMove = !(movingPiece.hasMoved);
+    
+  if (move.isEnPassant) 
+  {
+      move.capturedPiece = getPiece(board, move.fromRow, move.toCol);
+  } 
+  else 
+  {
+      move.capturedPiece = getPiece(board, move.toRow, move.toCol);
+  }
+
   movingPiece.hasMoved = true;
   Piece empty = makePiece(EMPTY, NONE);
 
@@ -314,6 +326,65 @@ void applyMove(Board *board, Move move)
   replacePiece(board, move.fromRow, move.fromCol, empty);
 
   board->moveCount++;
+}
+
+void undoMove(Board *board)
+{
+  if (board->moveCount > 0)
+  {
+    board->moveCount--;
+  }
+  else
+  {
+    return;
+  }
+  Move move = board->history[board->moveCount];
+
+  Piece movingPiece = getPiece(board, move.toRow, move.toCol);
+
+  if (move.isPromotion)
+  {
+    movingPiece.pieceType = PAWN;
+  }
+
+  if (move.firstMove)
+  {
+    movingPiece.hasMoved = false;
+  }
+
+  replacePiece(board, move.fromRow, move.fromCol, movingPiece);
+
+  Piece empty = makePiece(EMPTY, NONE);
+  
+  if (move.isEnPassant)
+  {
+    replacePiece(board, move.toRow, move.toCol, empty);
+    replacePiece(board, move.fromRow, move.toCol, move.capturedPiece);
+  }
+  else
+  {
+    replacePiece(board, move.toRow, move.toCol, move.capturedPiece);
+  }
+
+  if (move.isCastling)
+  {
+    if (move.toCol > move.fromCol)
+    {
+      // Kingside: Rook was moved from 9 to 6
+      Piece rook = getPiece(board, move.fromRow, 6);
+      rook.hasMoved = false;
+      replacePiece(board, move.fromRow, 9, rook);
+      replacePiece(board, move.fromRow, 6, empty);
+    }
+    else
+    {
+      // Queenside: Rook was moved from 0 to 4
+      Piece rook = getPiece(board, move.fromRow, 4);
+      rook.hasMoved = false;
+      replacePiece(board, move.fromRow, 0, rook);
+      replacePiece(board, move.fromRow, 4, empty);
+    }
+  }
 }
 
 void removePiece(Board *board, int row, int col)

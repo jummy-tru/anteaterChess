@@ -224,6 +224,22 @@ static void start_timer(void) {
 	update_status();
 }
 
+static void clear_move_log(void)
+{
+    FILE *f = fopen("gamelog.txt", "w");
+    if (f != NULL)
+    {
+        fprintf(f, "--- New Game Started ---\n");
+        fclose(f);
+    }
+
+    if (g_history_text)
+    {
+        GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(g_history_text));
+        gtk_text_buffer_set_text(buffer, "", -1);
+    }
+}
+
 void log_move_to_sidebar(Piece p, int fromR, int fromC, int toR, int toC) {
     if (!g_history_text) return;
 
@@ -243,12 +259,12 @@ void log_move_to_sidebar(Piece p, int fromR, int fromC, int toR, int toC) {
     }
 
     snprintf(move_str, sizeof(move_str), "%d. %c%c: %c%d -> %c%d\n",
-             controller_get_move_count(controller) + 1, colorChar, typeChar,
+             controller_get_move_count(controller), colorChar, typeChar,
              colToFile(fromC), rowToRank(fromR),
              colToFile(toC), rowToRank(toR));
 
-    // Write to physical file
-    FILE *f = fopen("gamelog.txt", "a"); // Append mode
+    // Write to output file
+    FILE *f = fopen("gamelog.txt", "a");
     if (f != NULL) {
         fprintf(f, "%s", move_str);
         fclose(f);
@@ -297,18 +313,7 @@ static void on_new_game(GtkButton *b, gpointer d)
     (void)b;
     (void)d;
 
-    // Wipe the log file and write a fresh header
-    FILE *f = fopen("gamelog.txt", "w"); // Write mode truncates the file
-    if (f != NULL) {
-        fprintf(f, "--- New Game Started ---\n");
-        fclose(f);
-    }
-
-    // Clear the UI history
-    if (g_history_text) {
-        GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(g_history_text));
-        gtk_text_buffer_set_text(buffer, "", -1);
-    }
+    clear_move_log();
 
     // Re-initialize the game state
     init_game(controller);
@@ -937,6 +942,7 @@ static void launch_game_window(void) {
 	gtk_widget_set_valign(g_status_label, GTK_ALIGN_CENTER);
 	gtk_container_add(GTK_CONTAINER(status_box), g_status_label);
 
+    clear_move_log();
     refresh_all();
     update_status();
     gtk_widget_show_all(win);

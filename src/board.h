@@ -15,6 +15,8 @@ typedef struct
 	bool isCastling;
 	bool isEnPassant;
 	bool isPromotion;
+	bool firstMove;
+	Piece capturedPiece;
 	PieceType promoteTo;
 } Move;
 
@@ -47,6 +49,7 @@ int loadBoardFromFEN(Board *board, const char *fen);
 Piece getPiece(Board *board, int row, int column);
 void movePiece(Board *board, int fromRow, int fromColumn, int toRow, int toColumn);
 void applyMove(Board *board, Move move);
+void undoMove(Board *board);
 void removePiece(Board *board, int row, int col);
 void replacePiece(Board *board, int row, int column, Piece newPiece);
 void showBoard(Board *board);
