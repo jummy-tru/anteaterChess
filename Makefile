@@ -24,14 +24,14 @@ clean:
 
 tar: clean
 	mkdir -p Chess_Alpha_src/bin
-	cp -r README.md COPYRIGHT.md INSTALL.md Makefile bin/ doc/ src/ pieces/ Chess_Alpha_src/
+	cp -r README.md COPYRIGHT.md INSTALL.md Makefile doc/ src/ pieces/ Chess_Alpha_src/
 	tar -czvf Chess_Alpha_src.tar.gz Chess_Alpha_src/
 	rm -rf Chess_Alpha_src
 
 tar_user: all
 	mkdir -p Chess_Alpha/bin
 	cp $(TARGET) Chess_Alpha/bin
-	cp -r README.md COPYRIGHT.md INSTALL.md bin/ doc/ pieces/ Chess_Alpha/
+	cp -r README.md COPYRIGHT.md INSTALL.md doc/ pieces/ Chess_Alpha/
 	tar -czvf Chess_Alpha.tar.gz Chess_Alpha/
 	rm -rf Chess_Alpha
 
