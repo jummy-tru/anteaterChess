@@ -482,6 +482,16 @@ static const char *MENU_CSS =
     "  color: #7ab8e8;"
     "  font-family: monospace;"
     "  font-size: 12px;"
+    "}"
+
+	//promotion piece button
+	"#promo_piece_btn {"
+    "  background-color: #252c34;"
+    "  border-radius: 6px;"
+    "  padding: 4px;"
+    "}"
+    "#promo_piece_btn:hover {"
+    "  background-color: #1a3650;"
     "}";
 
 static void launch_game_window(void);
@@ -509,6 +519,50 @@ static void on_app_quit(GtkButton *w, gpointer d) {
     (void)d;
 	stop_timer();
     gtk_main_quit();
+}
+
+static PieceType show_promotion_popup(Color color){
+char col_char = (color == WHITE) ? 'w' : 'b';
+    const char *prefixes[] = { "Q", "R", "B", "N", "A" };
+    PieceType types[]      = { QUEEN, ROOK, BISHOP, KNIGHT, ANTEATER };
+    const char *names[]    = { "Queen", "Rook", "Bishop", "Knight", "Anteater" };
+ 
+    GtkWidget *dialog = gtk_dialog_new_with_buttons( "Pawn Promotion", NULL, GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, NULL);
+    gtk_window_set_resizable(GTK_WINDOW(dialog), FALSE);
+    gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
+ 
+    GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+ 
+    GtkWidget *label = gtk_label_new("Choose a piece to promote to:");
+    gtk_widget_set_margin_top(label, 10);
+    gtk_widget_set_margin_bottom(label, 10);
+    gtk_box_pack_start(GTK_BOX(content), label, FALSE, FALSE, 0);
+ 
+    GtkWidget *btn_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_margin_start(btn_box, 10);
+    gtk_widget_set_margin_end(btn_box, 10);
+    gtk_widget_set_margin_bottom(btn_box, 10);
+    gtk_box_pack_start(GTK_BOX(content), btn_box, FALSE, FALSE, 0);
+ 
+    for (int i = 0; i < 5; i++)
+    {
+        char img_path[64];
+        snprintf(img_path, sizeof(img_path), "pieces/%c%s.png", col_char, prefixes[i]);
+ 
+        GtkWidget *img = gtk_image_new_from_file(img_path);
+        GtkWidget *btn = gtk_button_new();
+        gtk_button_set_image(GTK_BUTTON(btn), img);
+        gtk_widget_set_tooltip_text(btn, names[i]);
+        gtk_widget_set_size_request(btn, SQ, SQ);
+        gtk_dialog_add_action_widget(GTK_DIALOG(dialog), btn, (gint)types[i]);
+    }
+ 
+    gtk_widget_show_all(dialog);
+    gint result = gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+ 
+    if (result == QUEEN || result == ROOK || result == BISHOP || result == KNIGHT || result == ANTEATER)
+        return (PieceType)result;
 }
 
 static void show_rules_window(GtkButton *btn, gpointer data)
